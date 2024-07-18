@@ -4,6 +4,14 @@ export default function generateStructure(structure) {
       structure.tag(Object.fromEntries(structure.attributes ?? []))
     );
   const elem = document.createElement(structure.tag);
+  
+  // Gérer les références pour le système réactif
+  if (structure.ref) {
+    if (window.reactiveRenderer) {
+      window.reactiveRenderer.setRef(structure.ref, elem);
+    }
+  }
+  
   if (structure.attributes) {
     for (let attribute of structure.attributes) {
       const attrName = attribute[0];
