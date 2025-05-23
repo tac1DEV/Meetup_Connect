@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "Sunset",
+    "url": "https://picsum.photos/200/300?random=1",
+    "description": "A beautiful sunset over the mountains.",
+    "tags": ["sunset", "mountains", "nature"]
+  },
+  {
+    "id": 2,
+    "title": "Ocean Waves",
+    "url": "https://picsum.photos/200/300?random=2",
+    "description": "Waves crashing on the shore.",
+    "tags": ["ocean", "waves", "beach"]
+  },
+  {
+    "id": 3,
+    "title": "Forest Trail",
+    "url": "https://picsum.photos/200/300?random=3",
+    "description": "A serene trail through a dense forest.",
+    "tags": ["forest", "trail", "nature"]
+  }
+]
