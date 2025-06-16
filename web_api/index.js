@@ -1,6 +1,7 @@
 const root = document.getElementById("root");
 const table = document.createElement("table");
 const tbody = document.createElement("tbody");
+const browserRouterOptions = {};
 
 function onClick(event) {
   const td = event.currentTarget;
@@ -37,39 +38,110 @@ for (let rowIndex = 0; rowIndex < 5; rowIndex++) {
   }
 }
 
-const tableStructure = {
-  tag: "div",
-  children: [
-    Link({ link: "/gallery", title: "Gallery" }),
-    {
-      tag: "table",
-      attributes: [
-        ["id", "table1"],
-        ["style", { backgroundColor: "magenta", color: "yellow" }],
-      ],
-      children: [
-        {
-          tag: "tbody",
-          attributes: [["class", "tbody-class"]],
-          children: Array.from({ length: 5 }, function createRow(_, rowIndex) {
-            return {
-              tag: "tr",
-              children: Array.from({ length: 5 }, (_, colIndex) => ({
-                tag: "td",
-                events: {
-                  click: [onClick],
-                },
-                children: ["Default"],
-              })),
-            };
-          }),
-        },
-      ],
-    },
-  ],
+const TablePage = function () {
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/gallery"],
+          ["title", "Gallery"],
+        ],
+      },
+      {
+        tag: "table",
+        attributes: [
+          ["id", "table1"],
+          ["style", { backgroundColor: "magenta", color: "yellow" }],
+        ],
+        children: [
+          {
+            tag: "tbody",
+            attributes: [["class", "tbody-class"]],
+            children: Array.from(
+              { length: 5 },
+              function createRow(_, rowIndex) {
+                return {
+                  tag: "tr",
+                  children: Array.from({ length: 5 }, (_, colIndex) => ({
+                    tag: "td",
+                    events: {
+                      click: [onClick],
+                    },
+                    children: ["Default"],
+                  })),
+                };
+              }
+            ),
+          },
+        ],
+      },
+    ],
+  };
+};
+
+const TablePagePseudoFramework = function () {
+  let editCell = undefined;
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/gallery"],
+          ["title", "Gallery"],
+        ],
+      },
+      {
+        tag: "table",
+        attributes: [
+          ["id", "table1"],
+          ["style", { backgroundColor: "magenta", color: "yellow" }],
+        ],
+        children: [
+          {
+            tag: "tbody",
+            attributes: [["class", "tbody-class"]],
+            children: Array.from(
+              { length: 5 },
+              function createRow(_, rowIndex) {
+                return {
+                  tag: "tr",
+                  children: Array.from({ length: 5 }, (_, colIndex) => ({
+                    tag: "td",
+                    events: {
+                      click: [
+                        ,
+                        /*onClick*/ function () {
+                          editCell = `${rowIndex},${colIndex}`;
+                        },
+                      ],
+                    },
+                    children: [
+                      editCell === `${rowIndex},${colIndex}`
+                        ? {
+                            tag: "input",
+                            attributes: [["value", "Default"]],
+                          }
+                        : "Default",
+                    ],
+                  })),
+                };
+              }
+            ),
+          },
+        ],
+      },
+    ],
+  };
 };
 
 function generateStructure(structure) {
+  if (typeof structure.tag === "function")
+    return generateStructure(
+      structure.tag(Object.fromEntries(structure.attributes ?? []))
+    );
   const elem = document.createElement(structure.tag);
   if (structure.attributes) {
     for (let attribute of structure.attributes) {
@@ -107,7 +179,13 @@ function Gallery() {
   return {
     tag: "div",
     children: [
-      Link({ link: "/home", title: "HomePage" }),
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/home"],
+          ["title", "HomePage"],
+        ],
+      },
       {
         tag: "div",
         children: Array.from({ length: 500 }, (_, index) => ({
@@ -151,11 +229,18 @@ async function GalleryDatabase2() {
 
 function Toto() {
   return createElement(
-    "ul",
-    {},
-    createElement("li", {}, "fourchette"),
-    createElement("li", {}, "couteau"),
-    createElement("li", {}, "cuillère")
+    "div",
+    createElement(Link, {
+      link: "/home",
+      title: "HomePage",
+    }),
+    createElement(
+      "ul",
+      {},
+      createElement("li", {}, "fourchette"),
+      createElement("li", {}, "couteau"),
+      createElement("li", {}, "cuillère")
+    )
   );
 }
 
@@ -167,18 +252,50 @@ function createElement(tag, attributes, ...children) {
   };
 }
 
-const page404 = {
-  tag: "h1",
-  children: ["Tu t'es perdu !!! Game Over !!!"],
+const Page404 = function () {
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/home"],
+          ["title", "HomePage"],
+        ],
+      },
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/gallery"],
+          ["title", "Gallery"],
+        ],
+      },
+      {
+        tag: "h1",
+        children: ["Tu t'es perdu !!! Game Over !!!"],
+      },
+    ],
+  };
 };
 
 const routes = {
-  "/home": tableStructure,
-  "/gallery": Gallery(),
-  "*": page404,
+  "/": {
+    tag: TablePage,
+  },
+  "/home": {
+    tag: TablePage,
+  },
+  "/gallery": {
+    tag: Gallery,
+  },
+  "*": {
+    tag: Page404,
+  },
 };
 
-function HashRouter(routes, rootElement) {
+function HashRouter(props) {
+  const routes = props.routes;
+  const rootElement = props.rootElement;
   function generatePage() {
     const path = window.location.hash.slice(1);
     const struct = routes[path] ?? routes["*"];
@@ -191,9 +308,14 @@ function HashRouter(routes, rootElement) {
   generatePage();
 }
 
-function BrowserRouter(routes, rootElement) {
+function BrowserRouter(props) {
+  const routes = props.routes;
+  const rootElement = props.rootElement;
+  const baseUrl = props.baseUrl ?? "";
+  browserRouterOptions.baseUrl = baseUrl;
+  console.log(browserRouterOptions);
   function generatePage() {
-    const path = window.location.pathname;
+    const path = window.location.pathname.slice(baseUrl.length);
     const struct = routes[path] ?? routes["*"];
     const page = generateStructure(struct);
     if (rootElement.childNodes.length === 0) rootElement.appendChild(page);
@@ -210,17 +332,22 @@ function Link(props) {
 }
 
 function BrowserLink(props) {
+  console.log(browserRouterOptions);
   const link = props.link;
   const title = props.title;
 
   return {
     tag: "a",
-    attributes: [["href", link]],
+    attributes: [["href", browserRouterOptions.baseUrl + link]],
     events: {
       click: [
         function (event) {
           event.preventDefault();
-          window.history.pushState({}, undefined, link);
+          window.history.pushState(
+            {},
+            undefined,
+            event.currentTarget.getAttribute("href")
+          );
           window.dispatchEvent(new Event("pushstate"));
         },
       ],
@@ -240,7 +367,7 @@ function HashLink(props) {
   };
 }
 
-BrowserRouter(routes, root);
+BrowserRouter({ routes, rootElement: root, baseUrl: "/web_api" });
 
 /* root.appendChild(generateStructure(tableStructure));
 root.appendChild(generateStructure(Toto()));
