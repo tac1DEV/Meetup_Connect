@@ -191,7 +191,45 @@ function HashRouter(routes, rootElement) {
   generatePage();
 }
 
+function BrowserRouter(routes, rootElement) {
+  function generatePage() {
+    const path = window.location.pathname;
+    const struct = routes[path] ?? routes["*"];
+    const page = generateStructure(struct);
+    if (rootElement.childNodes.length === 0) rootElement.appendChild(page);
+    else rootElement.replaceChild(page, rootElement.childNodes[0]);
+  }
+
+  window.addEventListener("popstate", generatePage);
+  window.addEventListener("pushstate", generatePage);
+  generatePage();
+}
+
 function Link(props) {
+  return BrowserLink(props);
+}
+
+function BrowserLink(props) {
+  const link = props.link;
+  const title = props.title;
+
+  return {
+    tag: "a",
+    attributes: [["href", link]],
+    events: {
+      click: [
+        function (event) {
+          event.preventDefault();
+          window.history.pushState({}, undefined, link);
+          window.dispatchEvent(new Event("pushstate"));
+        },
+      ],
+    },
+    children: [title],
+  };
+}
+
+function HashLink(props) {
   const link = props.link;
   const title = props.title;
 
@@ -202,7 +240,7 @@ function Link(props) {
   };
 }
 
-HashRouter(routes, root);
+BrowserRouter(routes, root);
 
 /* root.appendChild(generateStructure(tableStructure));
 root.appendChild(generateStructure(Toto()));
