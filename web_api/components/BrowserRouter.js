@@ -1,4 +1,4 @@
-import generateStructure from "./generateStructure.js";
+import generateStructure from "../lib/generateStructure.js";
 
 const browserRouterOptions = {};
 

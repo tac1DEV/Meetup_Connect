@@ -1,4 +1,4 @@
-import { BrowserLink as Link } from "./BrowserRouter.js";
+import { BrowserLink as Link } from "../components/BrowserRouter.js";
 
 function onClick(event) {
   const td = event.currentTarget;
