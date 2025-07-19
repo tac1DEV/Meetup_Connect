@@ -13,6 +13,13 @@ export default function Gallery() {
         ],
       },
       {
+        tag: BrowserLink,
+        attributes: [
+          ["link", "/about"],
+          ["title", "About"],
+        ],
+      },
+      {
         tag: "div",
         children: Array.from({ length: 500 }, (_, index) => ({
           tag: "img",

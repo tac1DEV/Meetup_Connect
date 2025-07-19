@@ -33,6 +33,13 @@ export default function TablePage() {
         ],
       },
       {
+        tag: Link,
+        attributes: [
+          ["link", "/about"],
+          ["title", "About"],
+        ],
+      },
+      {
         tag: "table",
         attributes: [
           ["id", "table1"],

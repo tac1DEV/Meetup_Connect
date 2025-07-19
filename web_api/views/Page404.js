@@ -19,6 +19,13 @@ const Page404 = function () {
         ],
       },
       {
+        tag: Link,
+        attributes: [
+          ["link", "/about"],
+          ["title", "About"],
+        ],
+      },
+      {
         tag: "h1",
         children: ["Tu t'es perdu !!! Game Over !!!"],
       },
