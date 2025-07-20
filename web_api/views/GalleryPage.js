@@ -6,20 +6,6 @@ export default function Gallery() {
     tag: "div",
     children: [
       {
-        tag: BrowserLink,
-        attributes: [
-          ["link", "/home"],
-          ["title", "HomePage"],
-        ],
-      },
-      {
-        tag: BrowserLink,
-        attributes: [
-          ["link", "/communaute"],
-          ["title", "Communaute"],
-        ],
-      },
-      {
         tag: "div",
         children: Array.from({ length: 500 }, (_, index) => ({
           tag: "img",

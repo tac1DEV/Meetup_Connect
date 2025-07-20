@@ -1,4 +1,4 @@
-import Communaute from "../views/Communaute.js";
+import Evenement from "../views/Evenement.js";
 import Gallery from "../views/GalleryPage.js";
 import Page404 from "../views/Page404.js";
 import TablePage from "../views/TablePage.js";
@@ -10,8 +10,8 @@ export default {
   "/gallery": {
     tag: Gallery,
   },
-  "/communaute": {
-    tag: Communaute,
+  "/evenement": {
+    tag: Evenement,
   },
   "*": {
     tag: Page404,

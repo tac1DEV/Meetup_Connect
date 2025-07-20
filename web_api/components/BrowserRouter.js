@@ -1,4 +1,5 @@
 import generateStructure from "../lib/generateStructure.js";
+import Layout from "../views/Layout.js";
 
 const browserRouterOptions = {};
 
@@ -13,8 +14,10 @@ export default function BrowserRouter(props) {
     // const struct = routes[path] ?? routes["*"];
     const routeHandler = routes[path] ?? routes["*"];
     console.log(routeHandler);
-    const struct =
+    const rawStruct =
       typeof routeHandler === "function" ? await routeHandler() : routeHandler;
+    // Injecte le layout autour du contenu
+    const struct = await Layout(rawStruct);
     console.log(struct);
     const page = await generateStructure(struct);
     if (rootElement.childNodes.length === 0) rootElement.appendChild(page);

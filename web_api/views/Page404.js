@@ -21,8 +21,8 @@ const Page404 = function () {
       {
         tag: Link,
         attributes: [
-          ["link", "/communaute"],
-          ["title", "Communaute"],
+          ["link", "/evenement"],
+          ["title", "Evenement"],
         ],
       },
       {
