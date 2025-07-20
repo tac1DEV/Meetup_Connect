@@ -35,8 +35,8 @@ export default function TablePage() {
       {
         tag: Link,
         attributes: [
-          ["link", "/about"],
-          ["title", "About"],
+          ["link", "/communaute"],
+          ["title", "Communaute"],
         ],
       },
       {

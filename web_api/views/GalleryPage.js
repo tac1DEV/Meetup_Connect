@@ -15,8 +15,8 @@ export default function Gallery() {
       {
         tag: BrowserLink,
         attributes: [
-          ["link", "/about"],
-          ["title", "About"],
+          ["link", "/communaute"],
+          ["title", "Communaute"],
         ],
       },
       {
