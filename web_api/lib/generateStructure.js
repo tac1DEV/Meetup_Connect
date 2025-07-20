@@ -1,9 +1,9 @@
 export default async function generateStructure(structure) {
-  if (typeof structure.tag === "function")
-    return await generateStructure(
-      await structure.tag(Object.fromEntries(structure.attributes ?? []))
-    );
-
+  if (typeof structure.tag === "function") {
+    const props = Object.fromEntries(structure.attributes ?? []);
+    const result = await structure.tag(props);
+    return await generateStructure(result);
+  }
   const elem = document.createElement(structure.tag);
   if (structure.attributes) {
     for (let attribute of structure.attributes) {

@@ -5,7 +5,6 @@ export default function HashRouter(props) {
   const rootElement = props.rootElement;
   async function generatePage() {
     const path = window.location.hash.slice(1);
-    // const struct = routes[path] ?? routes["*"];
     const struct =
       typeof routeHandler === "function" ? await routeHandler() : routeHandler;
     const page = await generateStructure(struct);
