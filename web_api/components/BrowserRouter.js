@@ -8,10 +8,15 @@ export default function BrowserRouter(props) {
   const baseUrl = props.baseUrl ?? "";
   browserRouterOptions.baseUrl = baseUrl;
   console.log(browserRouterOptions);
-  function generatePage() {
+  async function generatePage() {
     const path = window.location.pathname.slice(baseUrl.length);
-    const struct = routes[path] ?? routes["*"];
-    const page = generateStructure(struct);
+    // const struct = routes[path] ?? routes["*"];
+    const routeHandler = routes[path] ?? routes["*"];
+    console.log(routeHandler);
+    const struct =
+      typeof routeHandler === "function" ? await routeHandler() : routeHandler;
+    console.log(struct);
+    const page = await generateStructure(struct);
     if (rootElement.childNodes.length === 0) rootElement.appendChild(page);
     else rootElement.replaceChild(page, rootElement.childNodes[0]);
   }

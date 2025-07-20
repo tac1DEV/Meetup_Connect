@@ -10,9 +10,7 @@ export default {
   "/gallery": {
     tag: Gallery,
   },
-  "/about": {
-    tag: AboutPage,
-  },
+  "/about": AboutPage,
   "*": {
     tag: Page404,
   },

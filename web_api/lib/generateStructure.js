@@ -1,8 +1,9 @@
-export default function generateStructure(structure) {
+export default async function generateStructure(structure) {
   if (typeof structure.tag === "function")
-    return generateStructure(
-      structure.tag(Object.fromEntries(structure.attributes ?? []))
+    return await generateStructure(
+      await structure.tag(Object.fromEntries(structure.attributes ?? []))
     );
+
   const elem = document.createElement(structure.tag);
   if (structure.attributes) {
     for (let attribute of structure.attributes) {
@@ -29,7 +30,7 @@ export default function generateStructure(structure) {
       const childElem =
         typeof child === "string"
           ? document.createTextNode(child)
-          : generateStructure(child);
+          : await generateStructure(child);
       elem.appendChild(childElem);
     }
   }
