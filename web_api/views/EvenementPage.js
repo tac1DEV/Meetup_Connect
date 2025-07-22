@@ -2,6 +2,7 @@ import { supabase } from "../../config.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
 
 export default async function EvenementPage() {
+  const communautes = await supabase.query("communaute");
   const data = await supabase.query("evenement");
 
   return {
@@ -158,7 +159,7 @@ export default async function EvenementPage() {
                       attributes: [["class", "font-semibold mb-3"]],
                       children: ["Modifier l'événement"],
                     },
-                    createEditForm(d),
+                    createEditForm(d, communautes),
                   ],
                 },
               ],
@@ -171,7 +172,7 @@ export default async function EvenementPage() {
 }
 
 // Fonction pour créer les champs du formulaire
-function createEventFormFields(eventData = {}) {
+function createEventFormFields(eventData = {}, communautes = []) {
   return [
     {
       tag: "div",
@@ -287,6 +288,39 @@ function createEventFormFields(eventData = {}) {
               ],
             },
           ],
+        },
+      ],
+    },
+    {
+      tag: "div",
+      children: [
+        {
+          tag: "label",
+          attributes: [
+            ["class", "block text-sm font-medium text-gray-700 mb-1"],
+          ],
+          children: ["Communauté *"],
+        },
+        {
+          tag: "select",
+          attributes: [
+            ["name", "id_communaute"],
+            ["required", ""],
+            [
+              "class",
+              "w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500",
+            ],
+          ],
+          children: communautes.map((communaute) => ({
+            tag: "option",
+            attributes: [
+              ["value", String(communaute.id)],
+              ...(eventData.id_communaute === communaute.id
+                ? [["selected", ""]]
+                : []),
+            ],
+            children: [communaute.nom],
+          })),
         },
       ],
     },
@@ -521,7 +555,7 @@ function createEventFormFields(eventData = {}) {
 }
 
 // Fonction pour créer le formulaire de modification
-function createEditForm(eventData) {
+function createEditForm(eventData, communautes = []) {
   return {
     tag: "form",
     attributes: [
@@ -537,7 +571,7 @@ function createEditForm(eventData) {
       ],
     },
     children: [
-      ...createEventFormFields(eventData).slice(0, -1), // Tous les champs sauf le bouton
+      ...createEventFormFields(eventData, communautes).slice(0, -1),
       {
         tag: "div",
         attributes: [["class", "flex justify-end gap-2"]],
@@ -630,6 +664,10 @@ async function updateEvent(e, eventId) {
     if (v === "") payload[k] = null;
   });
 
+  console.log("Mise à jour événement :", {
+    id: eventId,
+    data: payload,
+  });
   try {
     const result = await supabase.update("evenement", eventId, payload);
     if (result) {

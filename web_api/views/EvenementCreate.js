@@ -1,6 +1,8 @@
 import { supabase } from "../../config.js";
 
 export default async function EvenementCreate() {
+  const communautes = await supabase.query("communaute");
+
   return {
     tag: "div",
     attributes: [["class", "bg-white p-6 rounded-lg shadow-lg"]],
@@ -24,14 +26,14 @@ export default async function EvenementCreate() {
             },
           ],
         },
-        children: createEventFormFields(),
+        children: createEventFormFields({}, communautes),
       },
     ],
   };
 }
 
 // Fonction pour créer les champs du formulaire
-function createEventFormFields(eventData = {}) {
+function createEventFormFields(eventData = {}, communautes = []) {
   return [
     {
       tag: "div",
@@ -62,6 +64,40 @@ function createEventFormFields(eventData = {}) {
             },
           ],
         },
+        {
+          tag: "div",
+          children: [
+            {
+              tag: "label",
+              attributes: [
+                ["class", "block text-sm font-medium text-gray-700 mb-1"],
+              ],
+              children: ["Communauté *"],
+            },
+            {
+              tag: "select",
+              attributes: [
+                ["name", "id_communaute"],
+                ["required", ""],
+                [
+                  "class",
+                  "w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500",
+                ],
+              ],
+              children: communautes.map((communaute) => ({
+                tag: "option",
+                attributes: [
+                  ["value", String(communaute.id)],
+                  ...(eventData.id_communaute === communaute.id
+                    ? [["selected", ""]]
+                    : []),
+                ],
+                children: [communaute.nom],
+              })),
+            },
+          ],
+        },
+
         {
           tag: "div",
           children: [

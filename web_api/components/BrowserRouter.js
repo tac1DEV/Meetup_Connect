@@ -8,17 +8,14 @@ export default function BrowserRouter(props) {
   const rootElement = props.rootElement;
   const baseUrl = props.baseUrl ?? "";
   browserRouterOptions.baseUrl = baseUrl;
-  console.log(browserRouterOptions);
   async function generatePage() {
     const path = window.location.pathname.slice(baseUrl.length);
     // const struct = routes[path] ?? routes["*"];
     const routeHandler = routes[path] ?? routes["*"];
-    console.log(routeHandler);
     const rawStruct =
       typeof routeHandler === "function" ? await routeHandler() : routeHandler;
     // Injecte le layout autour du contenu
     const struct = await Layout(rawStruct);
-    console.log(struct);
     const page = await generateStructure(struct);
     if (rootElement.childNodes.length === 0) rootElement.appendChild(page);
     else rootElement.replaceChild(page, rootElement.childNodes[0]);
@@ -30,7 +27,6 @@ export default function BrowserRouter(props) {
 }
 
 export function BrowserLink(props) {
-  console.log(browserRouterOptions);
   const link = props.link;
   const title = props.title;
 
