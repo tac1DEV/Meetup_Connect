@@ -64,6 +64,7 @@ export default function TablePage() {
   };
 }
 
+
 const TablePagePseudoFramework = function () {
   let editCell = undefined;
   return {
