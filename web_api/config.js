@@ -92,6 +92,118 @@ class SupabaseClient {
 			return [];
 		}
 	}
+
+	async register(email, password) {
+		const url = `${this.url}/auth/v1/signup`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email, password }),
+			});
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.error?.message || "Erreur d'inscription");
+			return data;
+		} catch (error) {
+			console.error("Erreur register:", error);
+			return { error: error.message };
+		}
+	}
+
+	async login(email, password) {
+		const url = `${this.url}/auth/v1/token?grant_type=password`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email, password }),
+			});
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.error?.description || "Erreur de connexion");
+			return data;
+		} catch (error) {
+			console.error("Erreur login:", error);
+			return { error: error.message };
+		}
+	}
+
+	async createUtilisateur({ id, nom, prenom, pseudo, telephone = null, avatar = null, bio = null }) {
+		const url = `${this.baseURL}/utilisateur`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ id, nom, prenom, pseudo, telephone, avatar, bio }),
+			});
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.message || "Erreur création utilisateur");
+			return data;
+		} catch (error) {
+			console.error("Erreur createUtilisateur:", error);
+			return { error: error.message };
+		}
+	}
+
+	async getUtilisateur(userId) {
+		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
+		try {
+			const response = await fetch(url, {
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+				},
+			});
+			const data = await response.json();
+			if (!response.ok) throw new Error("Erreur récupération utilisateur");
+			return data[0] || null;
+		} catch (error) {
+			console.error("Erreur getUtilisateur:", error);
+			return null;
+		}
+	}
+
+	async updateUtilisateur(userId, updates) {
+		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
+		try {
+			const response = await fetch(url, {
+				method: "PATCH",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+					"Prefer": "return=minimal"
+				},
+				body: JSON.stringify(updates),
+			});
+			
+			if (!response.ok) {
+				const errorText = await response.text();
+				throw new Error(`HTTP ${response.status}: ${errorText}`);
+			}
+			
+			// Pour PATCH, on peut ne pas avoir de contenu de réponse
+			const contentType = response.headers.get("content-type");
+			if (contentType && contentType.includes("application/json")) {
+				return await response.json();
+			} else {
+				return { success: true };
+			}
+		} catch (error) {
+			console.error("Erreur updateUtilisateur:", error);
+			return { error: error.message };
+		}
+	}
 }
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);

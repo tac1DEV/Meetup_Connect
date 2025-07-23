@@ -13,6 +13,27 @@ export default function Gallery() {
         ],
       },
       {
+        tag: BrowserLink,
+        attributes: [
+          ["link", "/register"],
+          ["title", "Inscription"],
+        ],
+      },
+      {
+        tag: BrowserLink,
+        attributes: [
+          ["link", "/login"],
+          ["title", "Connexion"],
+        ],
+      },
+      {
+        tag: BrowserLink,
+        attributes: [
+          ["link", "/profile"],
+          ["title", "Profil"],
+        ],
+      },
+      {
         tag: "div",
         children: Array.from({ length: 500 }, (_, index) => ({
           tag: "img",
