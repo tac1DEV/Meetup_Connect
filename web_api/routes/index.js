@@ -7,6 +7,8 @@ import RegisterPage from "../views/RegisterPage.js";
 import LoginPage from "../views/LoginPage.js";
 import ProfilePage from "../views/ProfilePage.js";
 import TestPage from "../views/TestPage.js";
+import Communautes from "../views/Communautes.js";
+import CommunautePage from "../views/CommunautePage.js";
 
 import AdminPage from "../views/AdminPage.js";
 import UseStateDemoPage from "../views/UseStateDemoPage.js";
@@ -21,6 +23,12 @@ export default {
   },
   "/gallery": {
     tag: Gallery,
+  },
+  "/communautes": {
+    tag: Communautes,
+  },
+  "/communaute": {
+    tag: CommunautePage,
   },
 
   "/evenement": {
