@@ -4,7 +4,8 @@ import Layout from "../components/Layout.js";
 import { createIntersectionObserver, preloadImages } from "../lib/performance.js";
 
 export default function Gallery() {
-  return {
+  const content = [
+    {
     tag: "div",
     children: [
       {
@@ -22,7 +23,10 @@ export default function Gallery() {
         })),
       },
     ],
-  };
+  },
+];
+
+return Layout(content);
 }
 async function GalleryDatabase() {
   const res = await fetch("/photos.json");

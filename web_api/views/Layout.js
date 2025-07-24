@@ -1,4 +1,4 @@
-import { BrowserLink as Link } from "../components/BrowserRouter.js";
+import { BrowserLink } from "../components/BrowserRouter.js";
 
 export default async function Layout(contentStruct) {
   return {
@@ -10,7 +10,7 @@ export default async function Layout(contentStruct) {
         attributes: [["class", "bg-white shadow p-4 flex gap-4"]],
         children: [
           {
-            tag: Link,
+            tag: BrowserLink,
             attributes: [
               ["link", "/home"],
               ["title", "HomePage"],
@@ -18,7 +18,7 @@ export default async function Layout(contentStruct) {
             ],
           },
           {
-            tag: Link,
+            tag: BrowserLink,
             attributes: [
               ["link", "/gallery"],
               ["title", "Gallery"],
@@ -26,7 +26,7 @@ export default async function Layout(contentStruct) {
             ],
           },
           {
-            tag: Link,
+            tag: BrowserLink,
             attributes: [
               ["link", "/evenement"],
               ["title", "Evenement"],
@@ -38,7 +38,7 @@ export default async function Layout(contentStruct) {
       {
         tag: "main",
         attributes: [["class", "p-6"]],
-        children: [contentStruct],
+        children: contentStruct ? [contentStruct] : [],
       },
     ],
   };

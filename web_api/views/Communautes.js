@@ -20,6 +20,7 @@ import { getCommunityImageUrl } from "../utils/ImageUtils.js";
 import { createCommunityCardImage } from "../utils/CommunityImageUtils.js";
 import createElement from "../lib/createElement.js";
 import generateStructure from "../lib/generateStructure.js";
+import Layout from "../components/Layout.js";
 
 // Charger les styles pour la création de communauté
 function loadCreateCommunityStyles() {
@@ -1408,7 +1409,8 @@ export default function CommunautesPage() {
 		}
 	}
 
-	return {
+	const content = [
+		{
 		tag: "div",
 		attributes: [
 			[
@@ -1702,7 +1704,10 @@ export default function CommunautesPage() {
 						],
 				  },
 		],
-	};
+	},
+];
+
+return Layout(content);
 }
 
 // Exporter les fonctions pour les tests et usage externe

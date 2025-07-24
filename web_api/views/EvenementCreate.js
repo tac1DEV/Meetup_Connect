@@ -1,9 +1,11 @@
 import { supabase } from "../../config.js";
+import Layout from "../components/Layout.js";
 
 export default async function EvenementCreate() {
   const communautes = await supabase.query("communaute");
 
-  return {
+  const content = [
+    {
     tag: "div",
     attributes: [["class", "bg-white p-6 rounded-lg shadow-lg"]],
     children: [
@@ -29,7 +31,10 @@ export default async function EvenementCreate() {
         children: createEventFormFields({}, communautes),
       },
     ],
-  };
+  },
+];
+
+  return Layout(content);
 }
 
 // Fonction pour créer les champs du formulaire

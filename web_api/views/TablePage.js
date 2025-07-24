@@ -1,4 +1,4 @@
-import { BrowserLink as Link } from "../components/BrowserRouter.js";
+import { BrowserLink } from "../components/BrowserRouter.js";
 import Layout from "../components/Layout.js";
 
 function onClick(event) {
@@ -29,12 +29,13 @@ function onClick(event) {
   td.removeEventListener("click", onClick);
 }
 
-export default function TablePage() {
-  return {
+export default async function TablePage() {
+  const content = [
+    {
     tag: "div",
     children: [
       {
-        tag: Link,
+        tag: BrowserLink,
         attributes: [
           ["link", "/gallery"],
           ["title", "Gallery"],
@@ -69,7 +70,10 @@ export default function TablePage() {
         ],
       },
     ],
-  };
+  },
+];
+
+return Layout(content);
 }
 
 

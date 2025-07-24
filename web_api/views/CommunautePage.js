@@ -7,6 +7,7 @@ import { createCommunityHeaderImage } from "../utils/CommunityImageUtils.js";
 import createElement from "../lib/createElement.js";
 import generateStructure from "../lib/generateStructure.js";
 import { loadCommunautesData } from "./Communautes.js";
+import Layout from "../components/Layout.js";
 
 // Initialisation de l'état global pour la page communauté
 StateService.setState('communautePage', {
@@ -530,7 +531,8 @@ export default function CommunautePage() {
       memberCount: 0
     });
   };
-  return {
+  const content = [
+    {
     tag: "div",
     attributes: [
       ["style", {
@@ -902,5 +904,8 @@ export default function CommunautePage() {
         ]
       }
     ]
-  };
+  },
+];
+
+  return Layout(content);
 }

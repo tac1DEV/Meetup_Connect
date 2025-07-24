@@ -1,11 +1,14 @@
 import { supabase } from "../../config.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
+import Layout from "../components/Layout.js";
 
 export default async function EvenementPage() {
   const communautes = await supabase.query("communaute");
   const data = await supabase.query("evenement");
 
-  return {
+  const content = [
+    {
+    
     tag: "div",
     attributes: [["class", "container mx-auto p-4 space-y-8"]],
     children: [
@@ -168,7 +171,10 @@ export default async function EvenementPage() {
         ],
       },
     ],
-  };
+  },
+  ];
+
+  return Layout(content);
 }
 
 // Fonction pour créer les champs du formulaire

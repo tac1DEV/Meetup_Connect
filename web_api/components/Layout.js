@@ -34,4 +34,17 @@ export default function Layout(children) {
       }
     ]
   };
-} 
+}
+
+// Fonction appelée après le rendu pour initialiser les composants
+Layout.postRender = function() {
+  // Initialiser l'état d'authentification
+  if (Header.updateAuthState) {
+    Header.updateAuthState();
+  }
+  
+  // Vérifier le rôle admin
+  if (Header.checkAdminRole) {
+    Header.checkAdminRole();
+  }
+}; 

@@ -2,8 +2,17 @@ export default async function generateStructure(structure) {
   if (typeof structure.tag === "function") {
     const props = Object.fromEntries(structure.attributes ?? []);
     const result = await structure.tag(props);
-    return await generateStructure(result);
+    if (result && typeof result === 'object' && result.tag) {
+      return await generateStructure(result);
+    }
+    return result;
   }
+  
+  if (!structure.tag) {
+    console.error("Invalid structure:", structure);
+    return document.createTextNode("");
+  }
+  
   const elem = document.createElement(structure.tag);
   
   
@@ -19,6 +28,8 @@ export default async function generateStructure(structure) {
         Object.assign(styleProps, attrValue);
       } else if (attrName === "class") {
         elem.className = attrValue;
+      } else if (attrName === "href") {
+        elem.setAttribute(attrName, attrValue);
       } else {
         otherAttrs.push([attrName, attrValue]);
       }
@@ -46,17 +57,23 @@ export default async function generateStructure(structure) {
   
   
   if (structure.children) {
-    const fragment = document.createDocumentFragment();
-    
     for (let child of structure.children) {
       const childElem =
         typeof child === "string"
           ? document.createTextNode(child)
-          : generateStructure(child);
-      elem.appendChild(childElem);
+          : await generateStructure(child);
+      if (childElem) {
+        elem.appendChild(childElem);
+      }
     }
-    
-    elem.appendChild(fragment);
+  }
+  
+  // Appeler postRender si la fonction existe sur le composant
+  if (structure.tag && structure.tag.postRender && typeof structure.tag.postRender === 'function') {
+    // Utiliser setTimeout pour s'assurer que le DOM est complètement rendu
+    setTimeout(() => {
+      structure.tag.postRender();
+    }, 0);
   }
   
   return elem;

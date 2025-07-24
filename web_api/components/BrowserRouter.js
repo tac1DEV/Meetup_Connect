@@ -10,7 +10,7 @@ export default function BrowserRouter(props) {
   const baseUrl = props.baseUrl ?? "";
   browserRouterOptions.baseUrl = baseUrl;
   
-  function generatePage() {
+  async function generatePage() {
     const path = window.location.pathname.slice(baseUrl.length);
     const struct = routes[path] ?? routes["*"];
     
@@ -21,7 +21,7 @@ export default function BrowserRouter(props) {
     // Vérifier le cache
     let page = pageCache.get(path);
     if (!page) {
-      page = generateStructure(struct);
+      page = await generateStructure(struct);
       if (page) {
         pageCache.set(path, page);
       }
@@ -66,6 +66,13 @@ export default function BrowserRouter(props) {
     
     rootElement.setAttribute('data-current-path', path);
     
+    // Appeler postRender après le rendu
+    setTimeout(() => {
+      if (struct.tag && struct.tag.postRender && typeof struct.tag.postRender === 'function') {
+        struct.tag.postRender();
+      }
+    }, 100);
+    
     // Initialiser les optimisations spécifiques à la page
     initPageOptimizations(path);
   }
@@ -95,9 +102,12 @@ export default function BrowserRouter(props) {
       }, 100);
     }
     
-    // Vérifier le rôle admin pour afficher/masquer le lien dans le header
+    // Vérifier le rôle admin et l'état d'authentification pour le header
     setTimeout(() => {
       import('./Header.js').then(({ default: Header }) => {
+        if (Header.updateAuthState) {
+          Header.updateAuthState();
+        }
         if (Header.checkAdminRole) {
           Header.checkAdminRole();
         }
@@ -107,8 +117,8 @@ export default function BrowserRouter(props) {
     }, 100);
   }
 
-  window.addEventListener("popstate", generatePage);
-  window.addEventListener("pushstate", generatePage);
+  window.addEventListener("popstate", () => generatePage());
+  window.addEventListener("pushstate", () => generatePage());
   generatePage();
 }
 
