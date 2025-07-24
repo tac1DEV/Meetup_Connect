@@ -1,0 +1,108 @@
+/* Styles pour le composant ImageUploader dans le formulaire de création de communauté */
+
+.create-community-uploader {
+  border: 2px dashed #e1e5e9;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.create-community-uploader:hover {
+  border-color: #4730dc;
+  background-color: #f8f9fa;
+}
+
+.create-community-uploader .upload-zone {
+  min-height: 160px;
+  background: #fafbfc;
+  border: none;
+  border-radius: 6px;
+}
+
+.create-community-uploader .upload-zone:hover {
+  background-color: #f1f3f4;
+}
+
+.create-community-uploader .upload-zone.drag-over {
+  border-color: #4730dc;
+  background-color: #e3f2fd;
+  transform: scale(1.02);
+}
+
+.create-community-uploader .upload-placeholder {
+  color: #5f6368;
+}
+
+.create-community-uploader .upload-placeholder p {
+  margin: 5px 0;
+}
+
+.create-community-uploader .image-preview img {
+  max-height: 200px;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+.create-community-uploader .remove-btn {
+  background: rgba(244, 67, 54, 0.9) !important;
+  color: white !important;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.create-community-uploader .remove-btn:hover {
+  background: rgba(244, 67, 54, 1) !important;
+  transform: scale(1.1);
+}
+
+.create-community-uploader .loading-overlay {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(2px);
+}
+
+.create-community-uploader .spinner {
+  border-color: #f3f3f3;
+  border-top-color: #4730dc;
+}
+
+.create-community-uploader .upload-message.success {
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  color: white;
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.create-community-uploader .upload-message.error {
+  background: linear-gradient(135deg, #f44336, #ef5350);
+  color: white;
+  border: none;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+/* Animation pour l'apparition du composant */
+.create-community-uploader {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+  .create-community-uploader .upload-zone {
+    min-height: 140px;
+  }
+  
+  .create-community-uploader .image-preview img {
+    max-height: 150px;
+  }
+}
