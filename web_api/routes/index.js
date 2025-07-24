@@ -1,3 +1,5 @@
+import EvenementPage from "../views/EvenementPage.js";
+import EvenementCreate from "../views/EvenementCreate.js";
 import Gallery from "../views/GalleryPage.js";
 import Page404 from "../views/Page404.js";
 import TablePage from "../views/TablePage.js";
@@ -16,6 +18,15 @@ export default {
   "/gallery": {
     tag: Gallery,
   },
+
+  "/evenement": {
+    tag: EvenementPage,
+  },
+  
+  "/evenement/create": {
+    tag: EvenementCreate,
+  },
+ 
   "/profile": {
     tag: ProfilePage,
   },

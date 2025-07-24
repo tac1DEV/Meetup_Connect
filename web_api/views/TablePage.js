@@ -30,84 +30,46 @@ function onClick(event) {
 }
 
 export default function TablePage() {
-  const content = [
-    {
-      tag: "div",
-      attributes: [
-        ["style", {
-          marginBottom: "2rem"
-        }]
-      ],
-      children: [
-        {
-          tag: "h1",
-          attributes: [
-            ["style", {
-              color: "#2c3e50",
-              marginBottom: "1rem"
-            }]
-          ],
-          children: ["Tableau interactif"]
-        },
-        {
-          tag: "p",
-          attributes: [
-            ["style", {
-              color: "#7f8c8d",
-              marginBottom: "1rem"
-            }]
-          ],
-          children: ["Cliquez sur une cellule pour la modifier"]
-        }
-      ]
-    },
-    {
-      tag: "table",
-      attributes: [
-        ["id", "table1"],
-        ["style", { 
-          backgroundColor: "white", 
-          color: "#2c3e50",
-          borderCollapse: "collapse",
-          width: "100%",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          borderRadius: "8px",
-          overflow: "hidden"
-        }],
-      ],
-      children: [
-        {
-          tag: "tbody",
-          attributes: [["class", "tbody-class"]],
-          children: Array.from(
-            { length: 5 },
-            function createRow(_, rowIndex) {
-              return {
-                tag: "tr",
-                children: Array.from({ length: 5 }, (_, colIndex) => ({
-                  tag: "td",
-                  attributes: [
-                    ["style", {
-                      padding: "1rem",
-                      border: "1px solid #ecf0f1",
-                      cursor: "pointer",
-                      transition: "background-color 0.2s"
-                    }]
-                  ],
-                  events: {
-                    click: [onClick],
-                  },
-                  children: ["Default"],
-                })),
-              };
-            }
-          ),
-        },
-      ],
-    },
-  ];
-
-  return Layout(content);
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: Link,
+        attributes: [
+          ["link", "/gallery"],
+          ["title", "Gallery"],
+        ],
+      },
+      {
+        tag: "table",
+        attributes: [
+          ["id", "table1"],
+          ["style", { backgroundColor: "magenta", color: "yellow" }],
+        ],
+        children: [
+          {
+            tag: "tbody",
+            attributes: [["class", "tbody-class"]],
+            children: Array.from(
+              { length: 5 },
+              function createRow(_, rowIndex) {
+                return {
+                  tag: "tr",
+                  children: Array.from({ length: 5 }, (_, colIndex) => ({
+                    tag: "td",
+                    events: {
+                      click: [onClick],
+                    },
+                    children: ["Default"],
+                  })),
+                };
+              }
+            ),
+          },
+        ],
+      },
+    ],
+  };
 }
 
 

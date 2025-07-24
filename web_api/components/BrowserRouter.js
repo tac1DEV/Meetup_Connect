@@ -1,4 +1,5 @@
 import generateStructure from "../lib/generateStructure.js";
+import Layout from "../views/Layout.js";
 
 const browserRouterOptions = {};
 const pageCache = new Map(); // Cache pour les pages générées

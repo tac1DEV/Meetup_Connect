@@ -1,14 +1,9 @@
-export default function generateStructure(structure) {
-  if (!structure || typeof structure !== 'object' || !structure.tag) {
-    console.warn("Élément invalide :", structure);
-    return null;
-  }
-  
+export default async function generateStructure(structure) {
   if (typeof structure.tag === "function") {
-    const result = structure.tag(Object.fromEntries(structure.attributes ?? []));
-    return generateStructure(result);
+    const props = Object.fromEntries(structure.attributes ?? []);
+    const result = await structure.tag(props);
+    return await generateStructure(result);
   }
-  
   const elem = document.createElement(structure.tag);
   
   
@@ -58,10 +53,7 @@ export default function generateStructure(structure) {
         typeof child === "string"
           ? document.createTextNode(child)
           : generateStructure(child);
-      
-      if (childElem) {
-        fragment.appendChild(childElem);
-      }
+      elem.appendChild(childElem);
     }
     
     elem.appendChild(fragment);
