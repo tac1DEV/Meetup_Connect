@@ -1,5 +1,6 @@
 import { BrowserLink as Link } from "../components/BrowserRouter.js";
 import supabase from "../config.js";
+import Layout from "../components/Layout.js";
 
 function parseJwt(token) {
   if (!token) return null;
@@ -31,175 +32,182 @@ export default function ProfilePage() {
   }
 
   ProfilePage.loadUserData();
-  return {
-    tag: "div",
-    attributes: [["style", {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      backgroundColor: "#fff",
-      padding: "20px",
-      fontFamily: "sans-serif",
-    }]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["style", {
-          width: "100%",
-          maxWidth: "500px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-        }]],
-        children: [
-          
-          {
-            tag: "div",
-            attributes: [["style", {
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-            }]],
-            children: [
-              { tag: "h1", attributes: [["style", {color: "#5A3FF3", fontSize: "24px", fontWeight: "bold", margin: 0}]], children: ["Mon Profil"] },
-            ]
-          },
+  
+  const content = [
+    {
+      tag: "div",
+      attributes: [["style", {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "60vh",
+        backgroundColor: "#fff",
+        padding: "20px",
+        fontFamily: "sans-serif",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+      }]],
+      children: [
+        {
+          tag: "div",
+          attributes: [["style", {
+            width: "100%",
+            maxWidth: "500px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }]],
+          children: [
+            
+            {
+              tag: "div",
+              attributes: [["style", {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }]],
+              children: [
+                { tag: "h1", attributes: [["style", {color: "#5A3FF3", fontSize: "24px", fontWeight: "bold", margin: 0}]], children: ["Mon Profil"] },
+              ]
+            },
 
-          
-          {
-            tag: "div",
-            attributes: [["style", {
-              background: "#f8f9ff",
-              borderRadius: "16px",
-              padding: "32px",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-            }]],
-            children: [
-              
-              {
-                tag: "div",
-                attributes: [["style", {
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  marginBottom: "32px",
-                }]],
-                children: [
-                  { 
-                    tag: "img", 
-                    attributes: [
-                      ["src", "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(user.email)], 
-                      ["alt", "Avatar"], 
-                      ["style", {
-                        width: "100px", 
-                        height: "100px", 
-                        borderRadius: "50%", 
-                        border: "4px solid #5A3FF3",
-                        marginBottom: "16px"
-                      }]
-                    ]
-                  },
-                  { 
-                    tag: "h2", 
-                    attributes: [["style", {
-                      fontSize: "24px", 
-                      fontWeight: "bold", 
-                      color: "#333",
-                      margin: "0 0 8px 0"
-                    }]], 
-                    children: ["Chargement..."] 
-                  },
-                  { 
-                    tag: "p", 
-                    attributes: [["style", {
-                      color: "#666", 
-                      fontSize: "16px",
-                      margin: 0
-                    }]], 
-                    children: [user.email] 
-                  }
-                ]
-              },
-
-              
-              {
-                tag: "div",
-                attributes: [["style", {
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }]],
-                children: [
-                  { tag: "h3", attributes: [["style", {color: "#5A3FF3", fontSize: "18px", fontWeight: "bold", margin: "0 0 16px 0"}]], children: ["Informations personnelles"] },
-                  
-                  
-                  createEditableField("Nom", "nom", "Chargement..."),
-                  createEditableField("Prénom", "prenom", "Chargement..."),
-                  createEditableField("Pseudo", "pseudo", "Chargement..."),
-                  createEditableField("Téléphone", "telephone", "Chargement..."),
-                  createEditableTextAreaField("Bio", "bio", "Chargement..."),
-                ]
-              },
-
-              
-              {
-                tag: "div",
-                attributes: [["style", {
-                  display: "flex",
-                  gap: "12px",
-                  marginTop: "24px",
-                }]],
-                children: [
-                  {
-                    tag: "button",
-                    attributes: [["style", {
-                      flex: 1,
-                      backgroundColor: "#5A3FF3",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "12px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }]],
-                    events: {
-                      click: [async function() {
-                        await ProfilePage.saveUserData();
-                      }]
+            
+            {
+              tag: "div",
+              attributes: [["style", {
+                background: "#f8f9ff",
+                borderRadius: "16px",
+                padding: "32px",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+              }]],
+              children: [
+                
+                {
+                  tag: "div",
+                  attributes: [["style", {
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    marginBottom: "32px",
+                  }]],
+                  children: [
+                    { 
+                      tag: "img", 
+                      attributes: [
+                        ["src", "https://api.dicebear.com/7.x/identicon/svg?seed=" + encodeURIComponent(user.email)], 
+                        ["alt", "Avatar"], 
+                        ["style", {
+                          width: "100px", 
+                          height: "100px", 
+                          borderRadius: "50%", 
+                          border: "4px solid #5A3FF3",
+                          marginBottom: "16px"
+                        }]
+                      ]
                     },
-                    children: ["Sauvegarder"]
-                  },
-                  {
-                    tag: "button",
-                    attributes: [["style", {
-                      flex: 1,
-                      backgroundColor: "#fff",
-                      color: "#5A3FF3",
-                      border: "2px solid #5A3FF3",
-                      borderRadius: "8px",
-                      padding: "12px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }]],
-                    events: {
-                      click: [function() { 
-                        localStorage.removeItem("sb_token"); 
-                        window.location.href = "/web_api/login"; 
-                      }]
+                    { 
+                      tag: "h2", 
+                      attributes: [["style", {
+                        fontSize: "24px", 
+                        fontWeight: "bold", 
+                        color: "#333",
+                        margin: "0 0 8px 0"
+                      }]], 
+                      children: ["Chargement..."] 
                     },
-                    children: ["Se déconnecter"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+                    { 
+                      tag: "p", 
+                      attributes: [["style", {
+                        color: "#666", 
+                        fontSize: "16px",
+                        margin: 0
+                      }]], 
+                      children: [user.email] 
+                    }
+                  ]
+                },
+
+                
+                {
+                  tag: "div",
+                  attributes: [["style", {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }]],
+                  children: [
+                    { tag: "h3", attributes: [["style", {color: "#5A3FF3", fontSize: "18px", fontWeight: "bold", margin: "0 0 16px 0"}]], children: ["Informations personnelles"] },
+                    
+                    
+                    createEditableField("Nom", "nom", "Chargement..."),
+                    createEditableField("Prénom", "prenom", "Chargement..."),
+                    createEditableField("Pseudo", "pseudo", "Chargement..."),
+                    createEditableField("Téléphone", "telephone", "Chargement..."),
+                    createEditableTextAreaField("Bio", "bio", "Chargement..."),
+                  ]
+                },
+
+                
+                {
+                  tag: "div",
+                  attributes: [["style", {
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
+                  }]],
+                  children: [
+                    {
+                      tag: "button",
+                      attributes: [["style", {
+                        flex: 1,
+                        backgroundColor: "#5A3FF3",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }]],
+                      events: {
+                        click: [async function() {
+                          await ProfilePage.saveUserData();
+                        }]
+                      },
+                      children: ["Sauvegarder"]
+                    },
+                    {
+                      tag: "button",
+                      attributes: [["style", {
+                        flex: 1,
+                        backgroundColor: "#fff",
+                        color: "#5A3FF3",
+                        border: "2px solid #5A3FF3",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }]],
+                      events: {
+                        click: [function() { 
+                          localStorage.removeItem("sb_token"); 
+                          window.location.href = "/web_api/login"; 
+                        }]
+                      },
+                      children: ["Se déconnecter"]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
+  return Layout(content);
 }
 
 function createInfoField(label, value) {
