@@ -1,4 +1,5 @@
 import supabase from "../config.js";
+
 import Layout from "../components/Layout.js";
 
 export default function RegisterPage() {
@@ -135,6 +136,7 @@ export default function RegisterPage() {
   ];
 
   return Layout(content);
+
 }
 
 

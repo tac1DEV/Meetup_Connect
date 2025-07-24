@@ -59,6 +59,7 @@ export default function Gallery() {
             cursor: "pointer"
           }]
         ],
+
         events: {
           mouseenter: [
             function(event) {

@@ -2,6 +2,7 @@ import { BrowserLink as Link } from "../components/BrowserRouter.js";
 import supabase from "../config.js";
 import Layout from "../components/Layout.js";
 
+
 function parseJwt(token) {
   if (!token) return null;
   try {
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   }
 
   ProfilePage.loadUserData();
+
   
   const content = [
     {
@@ -208,6 +210,7 @@ export default function ProfilePage() {
   ];
 
   return Layout(content);
+
 }
 
 function createInfoField(label, value) {

@@ -4,8 +4,10 @@ import TablePage from "../views/TablePage.js";
 import RegisterPage from "../views/RegisterPage.js";
 import LoginPage from "../views/LoginPage.js";
 import ProfilePage from "../views/ProfilePage.js";
+
 import AdminPage from "../views/AdminPage.js";
 import UseStateDemoPage from "../views/UseStateDemoPage.js";
+
 
 export default {
   "/home": {

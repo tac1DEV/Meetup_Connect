@@ -3,16 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Meetup Connect</title>
     <style>
-      /* Optimisations de performance */
+   
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
       
-      /* Optimisations de rendu */
+      
       body {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -21,20 +22,20 @@
         overflow-x: hidden;
       }
       
-      /* Optimisation des transitions */
+     
       * {
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
       }
       
-      /* Container principal avec optimisations */
+      
       #root {
         min-height: 100vh;
         position: relative;
         will-change: transform;
       }
       
-      /* Effets hover optimisés */
+   
       header a.hover {
         color: #5A3FF3 !important;
         transform: translateY(-2px);
@@ -45,48 +46,47 @@
         color: #fff !important;
         transform: translateY(-2px);
       }
-      
-      /* Transitions globales */
+     
       a, button, input, textarea {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       
-      /* Optimisation des images */
+     
       img {
         max-width: 100%;
         height: auto;
         display: block;
       }
       
-      /* Amélioration du scroll */
+     
       html {
         scroll-behavior: smooth;
       }
       
-      /* Optimisation pour les animations */
+   
       .layout {
         will-change: transform, opacity;
       }
       
-      /* Indicateur de chargement */
+      
       .loading {
         opacity: 0.7;
         pointer-events: none;
       }
       
-      /* Optimisation des tableaux */
+      
       table {
         border-collapse: collapse;
         width: 100%;
       }
       
-      /* Optimisation des formulaires */
+      
       input, textarea, select {
         font-family: inherit;
         font-size: inherit;
       }
       
-      /* Optimisations spécifiques pour la galerie */
+      
       .gallery-grid {
         contain: layout style paint;
       }
@@ -105,17 +105,17 @@
         opacity: 1;
       }
       
-      /* Optimisations pour les transitions de page */
+      
       .page-transition {
         transition: opacity 0.3s ease, transform 0.3s ease;
       }
       
-      /* Optimisation du header sticky */
+      
       header {
         contain: layout style paint;
       }
       
-      /* Optimisation du footer */
+    
       footer {
         contain: layout style paint;
       }
@@ -282,6 +282,7 @@
         justify-content: center;
       }
     </style>
+
     <script type="module" defer src="/index.js"></script>
   </head>
   <body>
