@@ -5,6 +5,10 @@ import RegisterPage from "../views/RegisterPage.js";
 import LoginPage from "../views/LoginPage.js";
 import ProfilePage from "../views/ProfilePage.js";
 
+import AdminPage from "../views/AdminPage.js";
+import UseStateDemoPage from "../views/UseStateDemoPage.js";
+
+
 export default {
   "/home": {
     tag: TablePage,
@@ -12,14 +16,20 @@ export default {
   "/gallery": {
     tag: Gallery,
   },
-  "/register": {
-    tag: RegisterPage,
+  "/profile": {
+    tag: ProfilePage,
   },
   "/login": {
     tag: LoginPage,
   },
-  "/profile": {
-    tag: ProfilePage,
+  "/register": {
+    tag: RegisterPage,
+  },
+  "/admin": {
+    tag: AdminPage,
+  },
+  "/useState-demo": {
+    tag: UseStateDemoPage,
   },
   "*": {
     tag: Page404,

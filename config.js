@@ -92,6 +92,149 @@ class SupabaseClient {
 			return [];
 		}
 	}
+
+	// Méthode d'authentification
+	async login(email, password) {
+		try {
+			const response = await fetch(`${this.url}/auth/v1/token?grant_type=password`, {
+				method: 'POST',
+				headers: {
+					'apikey': this.key,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					email: email,
+					password: password,
+				}),
+			});
+
+			const data = await response.json();
+
+			if (data.error) {
+				return { error: data.error_description || data.error };
+			}
+
+			return {
+				access_token: data.access_token,
+				refresh_token: data.refresh_token,
+				user: data.user
+			};
+		} catch (error) {
+			return { error: error.message };
+		}
+	}
+
+	// Méthode pour obtenir les données utilisateur
+	async getUtilisateur(userId) {
+		try {
+			const result = await this.query('utilisateur', {
+				where: { id: { eq: userId } },
+				limit: 1
+			});
+			return result[0] || null;
+		} catch (error) {
+			console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+			return null;
+		}
+	}
+
+	// Méthode pour mettre à jour les données utilisateur
+	async updateUtilisateur(userId, userData) {
+		try {
+			const response = await fetch(`${this.baseURL}/utilisateur?id=eq.${userId}`, {
+				method: 'PATCH',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json',
+					'Prefer': 'return=minimal'
+				},
+				body: JSON.stringify(userData)
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			return { success: true };
+		} catch (error) {
+			return { error: error.message };
+		}
+	}
+
+	// Méthode pour vérifier le rôle de l'utilisateur
+	async getUserRole(userId) {
+		try {
+			const result = await this.query('utilisateur', {
+				select: 'id_role',
+				where: { id: { eq: userId } },
+				limit: 1
+			});
+			return result[0]?.id_role || 1; // Par défaut rôle utilisateur (1)
+		} catch (error) {
+			console.error('Erreur lors de la vérification du rôle:', error);
+			return 1;
+		}
+	}
+
+	// Méthode pour obtenir tous les utilisateurs (admin seulement)
+	async getAllUsers() {
+		try {
+			return await this.query('utilisateur', {
+				select: '*',
+				orderBy: 'created_at.desc'
+			});
+		} catch (error) {
+			console.error('Erreur lors de la récupération des utilisateurs:', error);
+			return [];
+		}
+	}
+
+	// Méthode pour supprimer un utilisateur (admin seulement)
+	async deleteUser(userId) {
+		try {
+			const response = await fetch(`${this.baseURL}/utilisateur?id=eq.${userId}`, {
+				method: 'DELETE',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			return { success: true };
+		} catch (error) {
+			return { error: error.message };
+		}
+	}
+
+	// Méthode pour changer le rôle d'un utilisateur (admin seulement)
+	async updateUserRole(userId, roleId) {
+		try {
+			const response = await fetch(`${this.baseURL}/utilisateur?id=eq.${userId}`, {
+				method: 'PATCH',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json',
+					'Prefer': 'return=minimal'
+				},
+				body: JSON.stringify({ id_role: roleId })
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			return { success: true };
+		} catch (error) {
+			return { error: error.message };
+		}
+	}
 }
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
