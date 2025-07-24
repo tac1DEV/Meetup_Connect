@@ -1,10 +1,19 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
 import createElement from "../lib/createElement.js";
+import Layout from "../components/Layout.js";
+import { createIntersectionObserver, preloadImages } from "../lib/performance.js";
 
 export default function Gallery() {
   return {
     tag: "div",
     children: [
+      {
+        tag: BrowserLink,
+        attributes: [
+          ["link", "/home"],
+          ["title", "HomePage"],
+        ],
+      },
       {
         tag: "div",
         children: Array.from({ length: 500 }, (_, index) => ({
@@ -30,6 +39,7 @@ async function GalleryDatabase() {
     })),
   };
 }
+
 async function GalleryDatabase2() {
   const res = await fetch("/photos.json");
   const photos = await res.json();

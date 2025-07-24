@@ -1,4 +1,5 @@
 import { BrowserLink as Link } from "../components/BrowserRouter.js";
+import Layout from "../components/Layout.js";
 
 const Page404 = function () {
   return {
@@ -16,13 +17,6 @@ const Page404 = function () {
         attributes: [
           ["link", "/gallery"],
           ["title", "Gallery"],
-        ],
-      },
-      {
-        tag: Link,
-        attributes: [
-          ["link", "/evenement"],
-          ["title", "Evenement"],
         ],
       },
       {
