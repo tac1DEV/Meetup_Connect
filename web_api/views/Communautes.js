@@ -125,7 +125,7 @@ export async function loadCommunautesData() {
 			currentPath === "/web_api";
 
 		if (isCommunautesPage) {
-			renderCommunautesPage();
+			await renderCommunautesPage();
 			UIUtils.showToast(ErrorHandler.formatUserMessage(error), "error");
 		}
 
@@ -304,12 +304,12 @@ async function loadSubscriptionStates() {
 }
 
 // Fonction pour filtrer les communautés par catégorie
-function filterCommunautesByCategory(categoryId) {
+async function filterCommunautesByCategory(categoryId) {
 	const currentState = StateService.getState("communautes");
 	StateService.updateState("communautes", {
 		selectedCategoryId: categoryId,
 	});
-	renderCommunautesPage();
+	await renderCommunautesPage();
 }
 
 // Fonction pour obtenir les communautés filtrées
@@ -859,12 +859,12 @@ async function deleteCommunaute(communauteId, communauteNom) {
 }
 
 // Fonction pour rendre la page d'accueil
-function renderCommunautesPage() {
+async function renderCommunautesPage() {
 	const rootElement = document.getElementById("root");
 	if (!rootElement) return;
 
 	const CommunautesPageStructure = CommunautesPage();
-	const newPage = generateStructure(CommunautesPageStructure);
+	const newPage = await generateStructure(CommunautesPageStructure);
 
 	if (rootElement.firstChild) {
 		rootElement.replaceChild(newPage, rootElement.firstChild);
