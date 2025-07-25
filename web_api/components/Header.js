@@ -18,7 +18,7 @@ export default function Header({ isAuthenticated = true, isAdmin = true }) {
               navLink("/communautes", "Communautés"),
               navLink("/evenement", "Événements"),
           
-              navLink("/communautes", "Communautés"),
+           
               
               ...(isAuthenticated
                 ? [
