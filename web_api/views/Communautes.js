@@ -1578,34 +1578,6 @@ export default async function CommunautesPage() {
 				],
 				children: [
 					{
-						tag: "a",
-						attributes: [
-							["href", "/web_api/gallery"],
-							[
-								"style",
-								{
-									display: "inline-block",
-									padding: "10px 15px",
-									backgroundColor: "#ff9800",
-									color: "white",
-									textDecoration: "none",
-									borderRadius: "5px",
-									fontSize: "14px",
-								},
-							],
-						],
-						events: {
-							click: [
-								(e) => {
-									e.preventDefault();
-									window.history.pushState({}, "", `/web_api/gallery`);
-									window.dispatchEvent(new Event("pushstate"));
-								},
-							],
-						},
-						children: ["Galerie"],
-					},
-					{
 						tag: "button",
 						attributes: [
 							[

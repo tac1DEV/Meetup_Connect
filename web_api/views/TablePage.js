@@ -35,13 +35,6 @@ export default async function TablePage() {
     tag: "div",
     children: [
       {
-        tag: BrowserLink,
-        attributes: [
-          ["link", "/gallery"],
-          ["title", "Gallery"],
-        ],
-      },
-      {
         tag: "table",
         attributes: [
           ["id", "table1"],
@@ -82,13 +75,6 @@ const TablePagePseudoFramework = function () {
   return {
     tag: "div",
     children: [
-      {
-        tag: Link,
-        attributes: [
-          ["link", "/gallery"],
-          ["title", "Gallery"],
-        ],
-      },
       {
         tag: "table",
         attributes: [

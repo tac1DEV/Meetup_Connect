@@ -94,7 +94,6 @@ export function getOptimizedConfig() {
 export function preloadCriticalResources() {
   const criticalPaths = [
     '/web_api/home',
-    '/web_api/gallery',
     '/web_api/profile',
   ];
   

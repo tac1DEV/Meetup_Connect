@@ -53,7 +53,6 @@ export default function Header() {
               navLink("/home", "Accueil"),
               navLink("/communautes", "Communautés"),
               navLink("/evenement", "Événements"),
-              navLink("/gallery", "Galerie"),
               navLink("/profile", "Profil"),
               {
                 tag: "li",

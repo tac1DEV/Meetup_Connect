@@ -13,13 +13,6 @@ const Page404 = function () {
         ],
       },
       {
-        tag: Link,
-        attributes: [
-          ["link", "/gallery"],
-          ["title", "Gallery"],
-        ],
-      },
-      {
         tag: "h1",
         children: ["Tu t'es perdu !!! Game Over !!!"],
       },
