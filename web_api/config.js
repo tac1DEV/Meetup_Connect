@@ -313,6 +313,173 @@ class SupabaseClient {
 		}
 	}
 
+	// Méthodes de gestion des événements
+	async getEvenements(limit = 10) {
+		try {
+			return await this.query("evenement", {
+				select: `
+					*,
+					communaute:id_communaute(nom, description)
+				`,
+				limit,
+				orderBy: "created_at.desc",
+			});
+		} catch (error) {
+			console.error("Erreur récupération événements:", error);
+			return [];
+		}
+	}
+
+	async getEvenementById(id) {
+		try {
+			const result = await this.query("evenement", {
+				select: `
+					*,
+					communaute:id_communaute(nom, description)
+				`,
+				where: { id: id },
+			});
+			return result[0] || null;
+		} catch (error) {
+			console.error("Erreur récupération événement:", error);
+			throw error;
+		}
+	}
+
+	async createEvenement(evenementData) {
+		try {
+			// Validation des données requises
+			if (!evenementData.nom || !evenementData.description) {
+				throw new Error("Le nom et la description sont obligatoires");
+			}
+
+			const result = await this.insert("evenement", {
+				nom: evenementData.nom,
+				description: evenementData.description,
+				date: evenementData.date,
+				lieu: evenementData.lieu,
+				adresse_complete: evenementData.adresse_complete,
+				latitude: evenementData.latitude,
+				longitude: evenementData.longitude,
+				visibilite: evenementData.visibilite !== undefined ? evenementData.visibilite : true,
+				id_communaute: evenementData.id_communaute,
+				nombre_max_participants: evenementData.nombre_max_participants
+					? parseInt(evenementData.nombre_max_participants)
+					: null,
+				prix: evenementData.prix ? parseFloat(evenementData.prix) : 0,
+				image: evenementData.image || null,
+				created_at: new Date().toISOString(),
+			});
+
+			console.log("Événement créé, résultat:", result);
+
+			// Récupérer l'événement créé avec ses relations
+			if (result && result.id) {
+				try {
+					const nouvelEvenement = await this.getEvenementById(result.id);
+					if (nouvelEvenement) {
+						return nouvelEvenement;
+					} else {
+						return result;
+					}
+				} catch (error) {
+					console.error(
+						"Erreur lors de la récupération de l'événement avec relations:",
+						error
+					);
+					return result;
+				}
+			}
+
+			return result;
+		} catch (error) {
+			console.error("Erreur création événement:", error);
+			throw error;
+		}
+	}
+
+	async updateEvenement(id, updates) {
+		try {
+			console.log("🔄 updateEvenement - ID:", id, "Updates:", updates);
+			
+			// Nettoyer et formater les données
+			const cleanedUpdates = { ...updates };
+			
+			// Convertir id_communaute en nombre si présent
+			if (cleanedUpdates.id_communaute) {
+				cleanedUpdates.id_communaute = parseInt(cleanedUpdates.id_communaute);
+			}
+			
+			// Convertir nombre_max_participants en nombre si présent et non null
+			if (cleanedUpdates.nombre_max_participants !== null && cleanedUpdates.nombre_max_participants !== undefined) {
+				cleanedUpdates.nombre_max_participants = cleanedUpdates.nombre_max_participants ? parseInt(cleanedUpdates.nombre_max_participants) : null;
+			}
+			
+			// Convertir prix en nombre si présent
+			if (cleanedUpdates.prix !== null && cleanedUpdates.prix !== undefined) {
+				cleanedUpdates.prix = parseFloat(cleanedUpdates.prix);
+			}
+			
+			console.log("🔄 Données nettoyées:", cleanedUpdates);
+			
+			const result = await this.update("evenement", cleanedUpdates, { id });
+			console.log("updateEvenement - Résultat:", result);
+
+			// Récupérer l'événement avec ses relations après mise à jour
+			try {
+				const evenementMisAJour = await this.getEvenementById(id);
+				if (evenementMisAJour) {
+					console.log(
+						"Événement récupéré avec relations:",
+						evenementMisAJour
+					);
+					return evenementMisAJour;
+				}
+			} catch (error) {
+				console.warn(
+					"Erreur récupération avec relations, retour du résultat de base:",
+					error
+				);
+			}
+
+			return result;
+		} catch (error) {
+			console.error("Erreur mise à jour événement:", error);
+			throw error;
+		}
+	}
+
+	async deleteEvenement(evenementId) {
+		try {
+			// Supprimer d'abord les participations à cet événement
+			await this.delete("participe", { id_evenement: evenementId });
+
+			// Supprimer l'événement
+			const result = await this.delete("evenement", { id: evenementId });
+			return result[0];
+		} catch (error) {
+			console.error("Erreur suppression événement:", error);
+			throw error;
+		}
+	}
+
+	async getEvenementsByCommunaute(communauteId, limit = 10) {
+		try {
+			return await this.query("evenement", {
+				select: `
+					*,
+					communaute:id_communaute(nom, description)
+				`,
+				where: { id_communaute: communauteId },
+				limit,
+				orderBy: "date.asc",
+			});
+		} catch (error) {
+			console.error("Erreur récupération événements par communauté:", error);
+			return [];
+		}
+	}
+
 	// Méthodes utilitaires pour CRUD génériques
 	async insert(table, data) {
 		const url = `${this.baseURL}/${table}`;
@@ -347,6 +514,9 @@ class SupabaseClient {
 			url += `?${whereParams}`;
 		}
 
+		console.log("🔧 URL de mise à jour:", url);
+		console.log("🔧 Données à envoyer:", updates);
+
 		try {
 			const response = await fetch(url, {
 				method: "PATCH",
@@ -358,11 +528,99 @@ class SupabaseClient {
 				},
 				body: JSON.stringify(updates),
 			});
+			
+			console.log("🔧 Statut de la réponse:", response.status);
+			console.log("🔧 Headers de la réponse:", Object.fromEntries(response.headers.entries()));
+			
 			if (!response.ok) {
 				const errorText = await response.text();
+				console.error("🔧 Erreur réponse:", errorText);
 				throw new Error(`HTTP ${response.status}: ${errorText}`);
 			}
+			
 			const result = await response.json();
+			console.log("🔧 Résultat brut de la mise à jour:", result);
+			console.log("🔧 Nombre de lignes affectées:", result.length);
+			
+			// Si aucune ligne n'est retournée, vérifier si l'enregistrement existe
+			if (result.length === 0) {
+				console.warn("🔧 Aucune ligne mise à jour - vérification de l'existence de l'enregistrement");
+				
+				// Tenter de récupérer l'enregistrement pour vérifier s'il existe
+				try {
+					const checkUrl = `${this.baseURL}/${table}?${Object.keys(where).map(key => `${key}=eq.${where[key]}`).join('&')}`;
+					console.log("🔧 URL de vérification:", checkUrl);
+					
+					const checkResponse = await fetch(checkUrl, {
+						headers: {
+							apikey: this.key,
+							Authorization: `Bearer ${this.key}`,
+							"Content-Type": "application/json",
+						},
+					});
+					
+					if (checkResponse.ok) {
+						const existingData = await checkResponse.json();
+						console.log("🔧 Données existantes trouvées:", existingData);
+						
+						if (existingData.length > 0) {
+							console.warn("🔧 L'enregistrement existe mais n'a pas été mis à jour");
+							console.log("🔧 Comparaison des données:");
+							console.log("🔧 Données existantes:", existingData[0]);
+							console.log("🔧 Updates envoyés:", updates);
+							
+							// Tenter une mise à jour alternative avec les données exactes
+							console.log("🔧 Tentative de mise à jour alternative...");
+							
+							// Essayer de mettre à jour avec seulement le nom pour tester
+							const simpleUpdateUrl = `${this.baseURL}/${table}?${Object.keys(where).map(key => `${key}=eq.${where[key]}`).join('&')}`;
+							const simpleUpdate = { nom: updates.nom };
+							
+							console.log("🔧 Test avec mise à jour simple - URL:", simpleUpdateUrl);
+							console.log("🔧 Test avec mise à jour simple - Data:", simpleUpdate);
+							
+							const simpleResponse = await fetch(simpleUpdateUrl, {
+								method: "PATCH",
+								headers: {
+									apikey: this.key,
+									Authorization: `Bearer ${this.key}`,
+									"Content-Type": "application/json",
+									Prefer: "return=representation",
+								},
+								body: JSON.stringify(simpleUpdate),
+							});
+							
+							console.log("🔧 Test simple - Statut:", simpleResponse.status);
+							console.log("🔧 Test simple - Headers:", Object.fromEntries(simpleResponse.headers.entries()));
+							
+							if (simpleResponse.ok) {
+								const simpleResult = await simpleResponse.json();
+								console.log("🔧 Test simple - Résultat:", simpleResult);
+								
+								if (simpleResult.length > 0) {
+									console.log("🔧 ✅ La mise à jour simple a fonctionné!");
+									// Retourner les données mises à jour
+									return { ...existingData[0], ...updates };
+								} else {
+									console.error("🔧 ❌ Même la mise à jour simple a échoué");
+								}
+							} else {
+								const simpleError = await simpleResponse.text();
+								console.error("🔧 Erreur mise à jour simple:", simpleError);
+							}
+							
+							// Retourner les données existantes fusionnées avec les updates
+							return { ...existingData[0], ...updates };
+						} else {
+							console.error("🔧 L'enregistrement avec ces critères n'existe pas");
+							throw new Error(`Aucun enregistrement trouvé avec les critères: ${JSON.stringify(where)}`);
+						}
+					}
+				} catch (checkError) {
+					console.error("🔧 Erreur lors de la vérification:", checkError);
+				}
+			}
+			
 			return result[0];
 		} catch (error) {
 			console.error("Erreur update:", error);
@@ -532,6 +790,149 @@ class SupabaseClient {
 		}
 	}
 
+	// Propriété storage pour la compatibilité
+	get storage() {
+		return {
+			listBuckets: () => this.listBuckets(),
+			createBucket: (bucketName, options) => this.createBucket(bucketName, options),
+			from: (bucketName) => ({
+				upload: (path, file, options) => this.uploadFile(bucketName, path, file, options),
+				remove: (paths) => this.removeFiles(bucketName, paths),
+				getPublicUrl: (path) => this.getPublicUrl(bucketName, path),
+				list: (path, options) => this.listFiles(bucketName, path, options)
+			})
+		};
+	}
+
+	// Méthodes de gestion du stockage Supabase
+	async listBuckets() {
+		const url = `${this.url}/storage/v1/bucket`;
+		try {
+			const response = await fetch(url, {
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+				},
+			});
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			console.error("Erreur listBuckets:", error);
+			return { data: null, error: { message: error.message } };
+		}
+	}
+
+	async createBucket(bucketName, options = {}) {
+		const url = `${this.url}/storage/v1/bucket`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: bucketName,
+					...options
+				}),
+			});
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			console.error("Erreur createBucket:", error);
+			return { data: null, error: { message: error.message } };
+		}
+	}
+
+	async uploadFile(bucketName, path, file, options = {}) {
+		const url = `${this.url}/storage/v1/object/${bucketName}/${path}`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					...(options.contentType && { "Content-Type": options.contentType })
+				},
+				body: file,
+			});
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			console.error("Erreur uploadFile:", error);
+			return { data: null, error: { message: error.message } };
+		}
+	}
+
+	async removeFiles(bucketName, paths) {
+		const url = `${this.url}/storage/v1/object/${bucketName}`;
+		try {
+			const response = await fetch(url, {
+				method: "DELETE",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ prefixes: paths }),
+			});
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			console.error("Erreur removeFiles:", error);
+			return { data: null, error: { message: error.message } };
+		}
+	}
+
+	getPublicUrl(bucketName, path) {
+		const publicURL = `${this.url}/storage/v1/object/public/${bucketName}/${path}`;
+		return { data: { publicUrl: publicURL } };
+	}
+
+	async listFiles(bucketName, path = '', options = {}) {
+		const url = `${this.url}/storage/v1/object/list/${bucketName}`;
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					apikey: this.key,
+					Authorization: `Bearer ${this.key}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					prefix: path,
+					...options
+				}),
+			});
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			console.error("Erreur listFiles:", error);
+			return { data: null, error: { message: error.message } };
+		}
+	}
+
   async query(table, options = {}) {
     const { select = "*", limit, where, orderBy } = options;
 
@@ -620,117 +1021,7 @@ class SupabaseClient {
     }
   }
 
-	async register(email, password) {
-		const url = `${this.url}/auth/v1/signup`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, password }),
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.error?.message || "Erreur d'inscription");
-			return data;
-		} catch (error) {
-			console.error("Erreur register:", error);
-			return { error: error.message };
-		}
-	}
 
-	async login(email, password) {
-		const url = `${this.url}/auth/v1/token?grant_type=password`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, password }),
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.error?.description || "Erreur de connexion");
-			return data;
-		} catch (error) {
-			console.error("Erreur login:", error);
-			return { error: error.message };
-		}
-	}
-
-	async createUtilisateur({ id, nom, prenom, pseudo, telephone = null, avatar = null, bio = null }) {
-		const url = `${this.baseURL}/utilisateur`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					Authorization: `Bearer ${this.key}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ id, nom, prenom, pseudo, telephone, avatar, bio }),
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.message || "Erreur création utilisateur");
-			return data;
-		} catch (error) {
-			console.error("Erreur createUtilisateur:", error);
-			return { error: error.message };
-		}
-	}
-
-	async getUtilisateur(userId) {
-		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
-		try {
-			const response = await fetch(url, {
-				headers: {
-					apikey: this.key,
-					Authorization: `Bearer ${this.key}`,
-					"Content-Type": "application/json",
-				},
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error("Erreur récupération utilisateur");
-			return data[0] || null;
-		} catch (error) {
-			console.error("Erreur getUtilisateur:", error);
-			return null;
-		}
-	}
-
-	async updateUtilisateur(userId, updates) {
-		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
-		try {
-			const response = await fetch(url, {
-				method: "PATCH",
-				headers: {
-					apikey: this.key,
-					Authorization: `Bearer ${this.key}`,
-					"Content-Type": "application/json",
-					"Prefer": "return=minimal"
-				},
-				body: JSON.stringify(updates),
-			});
-			
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`HTTP ${response.status}: ${errorText}`);
-			}
-			
-			// Pour PATCH, on peut ne pas avoir de contenu de réponse
-			const contentType = response.headers.get("content-type");
-			if (contentType && contentType.includes("application/json")) {
-				return await response.json();
-			} else {
-				return { success: true };
-			}
-		} catch (error) {
-			console.error("Erreur updateUtilisateur:", error);
-			return { error: error.message };
-		}
-	}
 
   async create(table, data) {
     const url = `${this.baseURL}/${table}`;
@@ -753,44 +1044,8 @@ class SupabaseClient {
     }
   }
 
-  async update(table, id, data) {
-    const url = `${this.baseURL}/${table}?id=eq.${id}`;
-    try {
-      const response = await fetch(url, {
-        method: "PATCH",
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error(`Erreur ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.error("Erreur update:", err);
-      return null;
-    }
-  }
 
-  async delete(table, id) {
-    const url = `${this.baseURL}/${table}?id=eq.${id}`;
-    try {
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-        },
-      });
-      if (!response.ok) throw new Error(`Erreur ${response.status}`);
-      return true;
-    } catch (err) {
-      console.error("Erreur delete:", err);
-      return false;
-    }
-  }
+
 }
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);

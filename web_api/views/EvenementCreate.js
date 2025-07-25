@@ -444,7 +444,7 @@ async function createEvent(e) {
   });
 
   try {
-    const result = await supabase.create("evenement", payload);
+    const result = await supabase.createEvenement(payload);
     if (result) {
       alert("Événement créé avec succès !");
       e.target.reset();

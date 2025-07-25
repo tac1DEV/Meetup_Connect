@@ -2,6 +2,7 @@ import { BrowserLink as Link } from "../components/BrowserRouter.js";
 import CommunauteService from "../services/CommunauteService.js";
 import CategorieService from "../services/CategorieService.js";
 import StateService from "../services/StateService.js";
+import SessionManager from "../utils/SessionManager.js";
 import {
 	ErrorHandler,
 	UIUtils,
@@ -136,10 +137,25 @@ export async function loadCommunautesData() {
 // Fonction pour gérer l'inscription à une communauté
 window.handleJoinCommunauteFromHome = async function (communauteId) {
 	try {
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError("Vous devez être connecté pour rejoindre une communauté.");
+			SessionManager.requireAuth();
+			return;
+		}
+
+		// Vérifier les permissions
+		if (!(await SessionManager.canJoinCommunity())) {
+			SessionManager.showPermissionError("Vous n'avez pas les permissions pour rejoindre une communauté.");
+			return;
+		}
+
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			SessionManager.showPermissionError("Impossible d'identifier l'utilisateur connecté.");
+			return;
+		}
 
 		// Marquer comme en cours de chargement
 		const currentState = StateService.getState("communautes");
@@ -153,7 +169,7 @@ window.handleJoinCommunauteFromHome = async function (communauteId) {
 		// Rafraîchir l'affichage pour montrer le bouton de chargement
 		renderCommunautesPage();
 
-		// Faire l'inscription avec l'ID utilisateur existant
+		// Faire l'inscription avec l'ID utilisateur connecté
 		await CommunauteService.joinCommunaute(communauteId, userId);
 
 		// Recharger le nombre de membres pour cette communauté
@@ -203,10 +219,19 @@ window.handleJoinCommunauteFromHome = async function (communauteId) {
 // Fonction pour gérer la désinscription d'une communauté
 window.handleLeaveCommunauteFromHome = async function (communauteId) {
 	try {
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError("Vous devez être connecté pour quitter une communauté.");
+			SessionManager.requireAuth();
+			return;
+		}
+
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			SessionManager.showPermissionError("Impossible d'identifier l'utilisateur connecté.");
+			return;
+		}
 
 		// Marquer comme en cours de chargement
 		const currentState = StateService.getState("communautes");
@@ -267,15 +292,64 @@ window.handleLeaveCommunauteFromHome = async function (communauteId) {
 	}
 };
 
+// Fonction pour générer le bouton de création de communauté (avec permissions)
+async function generateCreateCommunityButton() {
+	// Vérifier si l'utilisateur est connecté et peut créer des communautés
+	const isAuthenticated = SessionManager.isAuthenticated();
+	const canCreate = isAuthenticated && await SessionManager.canCreateCommunity();
+	
+	if (!canCreate) {
+		// Si l'utilisateur n'est pas connecté ou n'a pas les permissions, ne pas afficher le bouton
+		return null;
+	}
+
+	return {
+		tag: "button",
+		attributes: [
+			[
+				"style",
+				{
+					padding: "10px 15px",
+					backgroundColor: "#4730DC",
+					color: "white",
+					border: "none",
+					borderRadius: "5px",
+					cursor: "pointer",
+					fontSize: "14px",
+				},
+			],
+		],
+		events: {
+			click: [showCreateForm],
+			mouseenter: [
+				(e) => (e.currentTarget.style.backgroundColor = "#1976d2"),
+			],
+			mouseleave: [
+				(e) => (e.currentTarget.style.backgroundColor = "#4730DC"),
+			],
+		},
+		children: ["Créer une communauté"],
+	};
+}
+
 // Fonction pour charger l'état d'inscription pour toutes les communautés
 async function loadSubscriptionStates() {
 	try {
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			console.log("Utilisateur non connecté - pas de chargement des états d'inscription");
+			return;
+		}
+
 		const state = StateService.getState("communautes");
 		const subscriptions = {};
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+		
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			console.warn("Impossible d'obtenir l'ID utilisateur pour charger les états d'inscription");
+			return;
+		}
 
 		// Charger l'état d'inscription pour chaque communauté
 		for (const communaute of state.communautes) {
@@ -391,19 +465,33 @@ async function createCommunaute(formData, imageUrl = null) {
 }
 
 // Fonction pour afficher le formulaire de création
-function showCreateForm() {
-	// Vérifier que les catégories sont chargées
-	const state = StateService.getState("communautes");
-	if (state.categories.length === 0) {
-		UIUtils.showToast(
-			"Les catégories ne sont pas encore chargées. Veuillez attendre le chargement complet de la page ou cliquer sur 'Actualiser'.",
-			"error"
-		);
-		return;
-	}
+async function showCreateForm() {
+	try {
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError("Vous devez être connecté pour créer une communauté.");
+			SessionManager.requireAuth();
+			return;
+		}
 
-	// Variable pour stocker l'URL de l'image uploadée
-	let uploadedImageUrl = null;
+		// Vérifier les permissions
+		if (!(await SessionManager.canCreateCommunity())) {
+			SessionManager.showPermissionError("Vous n'avez pas les permissions pour créer une communauté.");
+			return;
+		}
+
+		// Vérifier que les catégories sont chargées
+		const state = StateService.getState("communautes");
+		if (state.categories.length === 0) {
+			UIUtils.showToast(
+				"Les catégories ne sont pas encore chargées. Veuillez attendre le chargement complet de la page ou cliquer sur 'Actualiser'.",
+				"error"
+			);
+			return;
+		}
+
+		// Variable pour stocker l'URL de l'image uploadée
+		let uploadedImageUrl = null;
 
 	const modal = UIUtils.createModal(
 		"Créer une nouvelle communauté",
@@ -547,6 +635,11 @@ function showCreateForm() {
 
 	// Focus sur le premier champ
 	setTimeout(() => document.getElementById("nom").focus(), 200);
+	
+	} catch (error) {
+		ErrorHandler.logError(error, "Communautes.showCreateForm");
+		UIUtils.showToast("Erreur lors de l'ouverture du formulaire: " + error.message, "error");
+	}
 }
 
 // Fonction pour éditer une communauté
@@ -863,7 +956,7 @@ async function renderCommunautesPage() {
 	const rootElement = document.getElementById("root");
 	if (!rootElement) return;
 
-	const CommunautesPageStructure = CommunautesPage();
+	const CommunautesPageStructure = await CommunautesPage();
 	const newPage = await generateStructure(CommunautesPageStructure);
 
 	if (rootElement.firstChild) {
@@ -1392,7 +1485,7 @@ function CommunauteCard({ communaute }) {
 }
 
 // Composant principal de la page d'accueil
-export default function CommunautesPage() {
+export default async function CommunautesPage() {
 	// Récupérer l'état actuel
 	const state = StateService.getState("communautes");
 
@@ -1408,6 +1501,12 @@ export default function CommunautesPage() {
 			setTimeout(loadData, 100);
 		}
 	}
+
+	// Générer le bouton de création avec permissions
+	const createButton = await generateCreateCommunityButton();
+
+	// Obtenir les communautés filtrées
+	const filteredCommunautes = getFilteredCommunautes();
 
 	const content = [
 		{
@@ -1533,33 +1632,8 @@ export default function CommunautesPage() {
 						},
 						children: ["Actualiser"],
 					},
-					{
-						tag: "button",
-						attributes: [
-							[
-								"style",
-								{
-									padding: "10px 15px",
-									backgroundColor: "#4730DC",
-									color: "white",
-									border: "none",
-									borderRadius: "5px",
-									cursor: "pointer",
-									fontSize: "14px",
-								},
-							],
-						],
-						events: {
-							click: [showCreateForm],
-							mouseenter: [
-								(e) => (e.currentTarget.style.backgroundColor = "#1976d2"),
-							],
-							mouseleave: [
-								(e) => (e.currentTarget.style.backgroundColor = "#4730DC"),
-							],
-						},
-						children: ["Créer une communauté"],
-					},
+					// Ajouter conditionnellement le bouton de création
+					...(createButton ? [createButton] : []),
 				],
 			},
 

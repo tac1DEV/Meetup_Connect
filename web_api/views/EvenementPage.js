@@ -641,7 +641,7 @@ async function createEvent(e) {
   });
 
   try {
-    const result = await supabase.create("evenement", payload);
+    const result = await supabase.createEvenement(payload);
     if (result) {
       alert("Événement créé avec succès !");
       e.target.reset();
@@ -675,7 +675,7 @@ async function updateEvent(e, eventId) {
     data: payload,
   });
   try {
-    const result = await supabase.update("evenement", eventId, payload);
+    const result = await supabase.updateEvenement(eventId, payload);
     if (result) {
       alert("Événement mis à jour avec succès !");
       const editForm = document.querySelector(`[data-edit-form="${eventId}"]`);
@@ -692,7 +692,7 @@ async function updateEvent(e, eventId) {
 
 async function deleteEvent(eventId) {
   try {
-    const result = await supabase.delete("evenement", eventId);
+    const result = await supabase.deleteEvenement(eventId);
     if (result) {
       window.dispatchEvent(new Event("pushstate"));
     }

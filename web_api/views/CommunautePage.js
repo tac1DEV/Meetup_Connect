@@ -1,6 +1,7 @@
 import { BrowserLink as Link } from "../components/BrowserRouter.js";
 import CommunauteService from "../services/CommunauteService.js";
 import StateService from "../services/StateService.js";
+import SessionManager from "../utils/SessionManager.js";
 import { ErrorHandler, UIUtils, DateUtils, NavigationUtils } from "../utils/index.js";
 import { Button, Card, LoadingSpinner, Badge, CommunityJoinButton } from "../components/UIComponents.js";
 import { createCommunityHeaderImage } from "../utils/CommunityImageUtils.js";
@@ -54,6 +55,128 @@ function getCommunauteIdFromUrl() {
   return communauteId;
 }
 
+// Fonction pour générer les boutons d'action selon les permissions
+async function generateActionButtons(communaute) {
+  const isAuthenticated = SessionManager.isAuthenticated();
+  const canDelete = isAuthenticated && await SessionManager.canDeleteCommunity();
+  
+  // Boutons conditionnels
+  const actionButtons = [];
+  
+  // Bouton de suppression (uniquement pour les admins)
+  if (canDelete) {
+    actionButtons.push({
+      tag: "button",
+      attributes: [
+        ["title", "Supprimer cette communauté"],
+        ["style", { 
+          backgroundColor: "#f44336", 
+          color: "white", 
+          border: "none", 
+          borderRadius: "6px", 
+          width: "36px", 
+          height: "36px", 
+          cursor: "pointer",
+          fontSize: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "background-color 0.2s"
+        }]
+      ],
+      events: {
+        click: [
+          () => deleteCommunaute(communaute.id, communaute.nom)
+        ],
+        mouseenter: [
+          (e) => e.currentTarget.style.backgroundColor = "#d32f2f"
+        ],
+        mouseleave: [
+          (e) => e.currentTarget.style.backgroundColor = "#f44336"
+        ]
+      },
+      children: ["✕"]
+    });
+  }
+  
+  return actionButtons;
+}
+
+// Fonction pour générer le bouton de rejoindre/quitter selon les permissions
+async function generateJoinLeaveButton(communauteState) {
+  const isAuthenticated = SessionManager.isAuthenticated();
+  const canJoin = isAuthenticated && await SessionManager.canJoinCommunity();
+  
+  // Si l'utilisateur n'est pas connecté ou n'a pas les permissions
+  if (!canJoin) {
+    return {
+      tag: "button",
+      attributes: [
+        ["type", "button"],
+        ["style", {
+          backgroundColor: "#ccc",
+          color: "#666",
+          border: "none",
+          borderRadius: "4px",
+          padding: "14px 28px",
+          fontSize: "16px",
+          cursor: "not-allowed",
+          minWidth: "150px",
+          transition: "all 0.2s ease",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px"
+        }]
+      ],
+      children: ["Connexion requise"]
+    };
+  }
+
+  // Bouton normal pour les utilisateurs connectés avec permissions
+  return {
+    tag: "button",
+    attributes: [
+      ["type", "button"],
+      ["style", {
+        backgroundColor: (communauteState.isSubscribed || false) ? "#ccc" : 
+          (communauteState.communaute.nombre_max_membres && 
+           (communauteState.memberCount || 0) >= communauteState.communaute.nombre_max_membres ? "#ff9800" : "#4730dc"),
+        color: (communauteState.isSubscribed || false) ? "#333" : "white",
+        border: "none",
+        borderRadius: "4px",
+        padding: "14px 28px",
+        fontSize: "16px",
+        cursor: (communauteState.loadingSubscription || false) ? "not-allowed" : "pointer",
+        opacity: (communauteState.loadingSubscription || false) ? "0.6" : "1",
+        minWidth: "150px",
+        transition: "all 0.2s ease",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "8px"
+      }]
+    ],
+    events: {
+      click: [
+        () => {
+          if (communauteState.loadingSubscription) return;
+          
+          if (communauteState.isSubscribed) {
+            window.handleLeaveCommunaute(communauteState.communaute.id);
+          } else {
+            window.handleJoinCommunaute(communauteState.communaute.id);
+          }
+        }
+      ]
+    },
+    children: [
+      (communauteState.loadingSubscription || false) ? "..." : 
+      (communauteState.isSubscribed || false) ? "Se désinscrire" : 
+      (communauteState.communaute.nombre_max_membres && 
+       (communauteState.memberCount || 0) >= communauteState.communaute.nombre_max_membres ? "Complet" : "+ Rejoindre")
+    ]
+  };
+}
+
 // Fonction pour charger les données d'une communauté spécifique
 async function loadCommunauteData(communauteId = null) {
   try {
@@ -76,10 +199,20 @@ async function loadCommunauteData(communauteId = null) {
     const communaute = await CommunauteService.getCommunauteById(communauteId);
     
     // Charger l'état d'inscription et le nombre de membres
-    const [isSubscribed, members] = await Promise.all([
-      CommunauteService.isUserSubscribed(communauteId),
-      CommunauteService.getCommunauteMembers(communauteId)
-    ]);
+    let isSubscribed = false;
+    let members = [];
+
+    // Charger l'état d'inscription seulement si l'utilisateur est connecté
+    if (SessionManager.isAuthenticated()) {
+      const userId = SessionManager.getCurrentUserId();
+      [isSubscribed, members] = await Promise.all([
+        CommunauteService.isUserSubscribed(communauteId, userId),
+        CommunauteService.getCommunauteMembers(communauteId)
+      ]);
+    } else {
+      // Charger uniquement les membres si l'utilisateur n'est pas connecté
+      members = await CommunauteService.getCommunauteMembers(communauteId);
+    }
     
     StateService.updateState('communautePage', {
       communaute,
@@ -169,12 +302,26 @@ async function joinEvent(eventId, eventTitle) {
 // Fonction pour gérer l'inscription à la communauté
 window.handleJoinCommunaute = async function(communauteId) {
   try {
+    // Vérifier l'authentification
+    if (!SessionManager.isAuthenticated()) {
+      SessionManager.showPermissionError("Vous devez être connecté pour rejoindre une communauté.");
+      SessionManager.requireAuth();
+      return;
+    }
+
+    // Vérifier les permissions
+    if (!(await SessionManager.canJoinCommunity())) {
+      SessionManager.showPermissionError("Vous n'avez pas les permissions pour rejoindre une communauté.");
+      return;
+    }
+
     // Marquer comme en cours de chargement
     StateService.updateState('communautePage', { loadingSubscription: true });
     renderCommunautePage();
 
-    // Faire l'inscription
-    await CommunauteService.joinCommunaute(communauteId);
+    // Faire l'inscription avec l'utilisateur connecté
+    const userId = SessionManager.getCurrentUserId();
+    await CommunauteService.joinCommunaute(communauteId, userId);
 
     // Recharger les membres et mettre à jour l'état
     const members = await CommunauteService.getCommunauteMembers(communauteId);
@@ -201,12 +348,20 @@ window.handleJoinCommunaute = async function(communauteId) {
 // Fonction pour gérer la désinscription de la communauté
 window.handleLeaveCommunaute = async function(communauteId) {
   try {
+    // Vérifier l'authentification
+    if (!SessionManager.isAuthenticated()) {
+      SessionManager.showPermissionError("Vous devez être connecté pour quitter une communauté.");
+      SessionManager.requireAuth();
+      return;
+    }
+
     // Marquer comme en cours de chargement
     StateService.updateState('communautePage', { loadingSubscription: true });
     renderCommunautePage();
 
-    // Faire la désinscription
-    await CommunauteService.leaveCommunaute(communauteId);
+    // Faire la désinscription avec l'utilisateur connecté
+    const userId = SessionManager.getCurrentUserId();
+    await CommunauteService.leaveCommunaute(communauteId, userId);
 
     // Recharger les membres et mettre à jour l'état
     const members = await CommunauteService.getCommunauteMembers(communauteId);
@@ -233,6 +388,19 @@ window.handleLeaveCommunaute = async function(communauteId) {
 // Fonction pour supprimer une communauté
 async function deleteCommunaute(communauteId, communauteNom) {
   try {
+    // Vérifier l'authentification
+    if (!SessionManager.isAuthenticated()) {
+      SessionManager.showPermissionError("Vous devez être connecté pour supprimer une communauté.");
+      SessionManager.requireAuth();
+      return;
+    }
+
+    // Vérifier les permissions de suppression (seuls les admins peuvent supprimer)
+    if (!(await SessionManager.canDeleteCommunity())) {
+      SessionManager.showPermissionError("Seuls les administrateurs peuvent supprimer des communautés.");
+      return;
+    }
+
     // Vérifier s'il y a des événements associés pour informer l'utilisateur
     const nombreEvenements = await CommunauteService.countEvenementsByCommunaute(communauteId);
     
@@ -292,12 +460,12 @@ async function deleteCommunaute(communauteId, communauteNom) {
 }
 
 // Fonction pour rendre la page de communauté
-function renderCommunautePage() {
+async function renderCommunautePage() {
   const rootElement = document.getElementById('root');
   if (!rootElement) return;
 
-  const communautePageStructure = CommunautePage();
-  const newPage = generateStructure(communautePageStructure);
+  const communautePageStructure = await CommunautePage();
+  const newPage = await generateStructure(communautePageStructure);
   
   if (rootElement.firstChild) {
     rootElement.replaceChild(newPage, rootElement.firstChild);
@@ -498,8 +666,12 @@ function EventCard({ event }) {
 }
 
 // Composant principal de la page communauté
-export default function CommunautePage() {
+export default async function CommunautePage() {
   const communauteState = StateService.getState('communautePage');
+  
+  // Générer les boutons d'action avec permissions
+  const actionButtons = communauteState.communaute ? await generateActionButtons(communauteState.communaute) : [];
+  const joinLeaveButton = communauteState.communaute ? await generateJoinLeaveButton(communauteState) : null;
   
   // Charger les données au premier rendu si un ID est présent
   if (communauteState.loading && !communauteState.communaute) {
@@ -658,38 +830,8 @@ export default function CommunautePage() {
                             attributes: [["style", { margin: "0", color: "#333", fontSize: "32px" }]],
                             children: [communauteState.communaute.nom]
                           },
-                          {
-                            tag: "button",
-                            attributes: [
-                              ["title", "Supprimer cette communauté"],
-                              ["style", { 
-                                backgroundColor: "#f44336", 
-                                color: "white", 
-                                border: "none", 
-                                borderRadius: "6px", 
-                                width: "36px", 
-                                height: "36px", 
-                                cursor: "pointer",
-                                fontSize: "16px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "background-color 0.2s"
-                              }]
-                            ],
-                            events: {
-                              click: [
-                                () => deleteCommunaute(communauteState.communaute.id, communauteState.communaute.nom)
-                              ],
-                              mouseenter: [
-                                (e) => e.currentTarget.style.backgroundColor = "#d32f2f"
-                              ],
-                              mouseleave: [
-                                (e) => e.currentTarget.style.backgroundColor = "#f44336"
-                              ]
-                            },
-                            children: ["✕"]
-                          }
+                          // Ajouter conditionnellement les boutons d'action
+                          ...actionButtons
                         ]
                       },
                       {
@@ -768,48 +910,8 @@ export default function CommunautePage() {
                         }]],
                         children: [`${communauteState.memberCount || 0} membre(s) inscrit(s)`]
                       },
-                      {
-                        tag: "button",
-                        attributes: [
-                          ["type", "button"],
-                          ["style", {
-                            backgroundColor: (communauteState.isSubscribed || false) ? "#ccc" : 
-                              (communauteState.communaute.nombre_max_membres && 
-                               (communauteState.memberCount || 0) >= communauteState.communaute.nombre_max_membres ? "#ff9800" : "#4730dc"),
-                            color: (communauteState.isSubscribed || false) ? "#333" : "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            padding: "14px 28px",
-                            fontSize: "16px",
-                            cursor: (communauteState.loadingSubscription || false) ? "not-allowed" : "pointer",
-                            opacity: (communauteState.loadingSubscription || false) ? "0.6" : "1",
-                            minWidth: "150px",
-                            transition: "all 0.2s ease",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px"
-                          }]
-                        ],
-                        events: {
-                          click: [
-                            () => {
-                              if (communauteState.loadingSubscription) return;
-                              
-                              if (communauteState.isSubscribed) {
-                                window.handleLeaveCommunaute(communauteState.communaute.id);
-                              } else {
-                                window.handleJoinCommunaute(communauteState.communaute.id);
-                              }
-                            }
-                          ]
-                        },
-                        children: [
-                          (communauteState.loadingSubscription || false) ? "..." : 
-                          (communauteState.isSubscribed || false) ? "Se désinscrire" : 
-                          (communauteState.communaute.nombre_max_membres && 
-                           (communauteState.memberCount || 0) >= communauteState.communaute.nombre_max_membres ? "Complet" : "+ Rejoindre")
-                        ]
-                      }
+                      // Utiliser le bouton conditionnel
+                      joinLeaveButton
                     ]
                   }
                 ]
