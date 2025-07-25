@@ -10,8 +10,8 @@ export default function Layout(children) {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        willChange: "transform, opacity",
-        transform: "translateZ(0)" 
+        position: "relative", 
+        
       }]
     ],
     children: [
@@ -24,6 +24,7 @@ export default function Layout(children) {
           ["style", {
             flex: "1",
             width: "100%",
+            zIndex: "1", 
             position: "relative"
           }]
         ],
@@ -42,9 +43,9 @@ Layout.postRender = function() {
   if (Header.updateAuthState) {
     Header.updateAuthState();
   }
-  
+
   // Vérifier le rôle admin
   if (Header.checkAdminRole) {
     Header.checkAdminRole();
   }
-}; 
+};

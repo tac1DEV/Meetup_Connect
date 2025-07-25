@@ -610,13 +610,15 @@ class SupabaseClient {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Erreur HTTP ${response.status}:`, errorText);
+        throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
       }
 
       return await response.json();
     } catch (error) {
       console.error("Erreur Supabase:", error);
-      return [];
+      throw error; // Propager l'erreur au lieu de retourner un tableau vide
     }
   }
 
