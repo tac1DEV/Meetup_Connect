@@ -66,7 +66,7 @@ export async function loadCommunautesData() {
 
 		// Chargement parallèle des données via les services
 		const [communautes, categories] = await Promise.all([
-			CommunauteService.getCommunautes(6),
+			CommunauteService.getCommunautes(10),
 			CategorieService.getCategories(),
 		]);
 

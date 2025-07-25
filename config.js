@@ -237,7 +237,7 @@ class SupabaseClient {
 	}
 
 	// Méthode pour récupérer les communautés
-	async getCommunautes(limit = 6, offset = 0) {
+	async getCommunautes(limit = 10, offset = 0) {
 		try {
 			const result = await this.query('communaute', {
 				select: '*',
@@ -266,6 +266,191 @@ class SupabaseClient {
 	}
 }
 
-export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Classe pour gérer Supabase Storage
+class SupabaseStorage {
+	constructor(url, key) {
+		this.url = url;
+		this.key = key;
+		this.storageURL = `${url}/storage/v1`;
+	}
+
+	// Créer une référence à un bucket
+	from(bucketName) {
+		return new SupabaseBucket(bucketName, this.storageURL, this.key);
+	}
+
+	// Lister tous les buckets
+	async listBuckets() {
+		try {
+			const response = await fetch(`${this.storageURL}/bucket`, {
+				method: 'GET',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+
+	// Créer un nouveau bucket
+	async createBucket(name, options = {}) {
+		try {
+			const response = await fetch(`${this.storageURL}/bucket`, {
+				method: 'POST',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					name,
+					public: options.public || false,
+					...options
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+}
+
+// Classe pour gérer les opérations sur un bucket spécifique
+class SupabaseBucket {
+	constructor(bucketName, storageURL, key) {
+		this.bucketName = bucketName;
+		this.storageURL = storageURL;
+		this.key = key;
+	}
+
+	// Upload d'un fichier
+	async upload(fileName, file, options = {}) {
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const response = await fetch(`${this.storageURL}/object/${this.bucketName}/${fileName}`, {
+				method: 'POST',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+				},
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return { 
+				data: {
+					path: fileName,
+					fullPath: `${this.bucketName}/${fileName}`,
+					...data
+				}, 
+				error: null 
+			};
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+
+	// Obtenir l'URL publique d'un fichier
+	getPublicUrl(fileName) {
+		const publicUrl = `${this.storageURL}/object/public/${this.bucketName}/${fileName}`;
+		return { 
+			data: { publicUrl }, 
+			error: null 
+		};
+	}
+
+	// Supprimer un ou plusieurs fichiers
+	async remove(fileNames) {
+		try {
+			const response = await fetch(`${this.storageURL}/object/${this.bucketName}`, {
+				method: 'DELETE',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					prefixes: Array.isArray(fileNames) ? fileNames : [fileNames]
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+
+	// Lister les fichiers dans le bucket
+	async list(path = '', options = {}) {
+		try {
+			const queryParams = new URLSearchParams();
+			if (path) queryParams.append('prefix', path);
+			if (options.limit) queryParams.append('limit', options.limit);
+			if (options.offset) queryParams.append('offset', options.offset);
+
+			const response = await fetch(`${this.storageURL}/object/list/${this.bucketName}?${queryParams}`, {
+				method: 'POST',
+				headers: {
+					'apikey': this.key,
+					'Authorization': `Bearer ${this.key}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					prefix: path,
+					...options
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+}
+
+// Client Supabase étendu avec le support du storage
+class ExtendedSupabaseClient extends SupabaseClient {
+	constructor(url, key) {
+		super(url, key);
+		this.storage = new SupabaseStorage(url, key);
+	}
+}
+
+export const supabase = new ExtendedSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default supabase;

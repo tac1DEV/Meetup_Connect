@@ -3,7 +3,7 @@ import supabase from "../config.js";
 // Service pour gérer les opérations liées aux communautés
 class CommunauteService {
 	// Récupérer toutes les communautés avec pagination
-	async getCommunautes(limit = 6, offset = 0) {
+	async getCommunautes(limit = 10, offset = 0) {
 		try {
 			return await supabase.getCommunautes(limit, offset);
 		} catch (error) {
