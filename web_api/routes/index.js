@@ -18,9 +18,6 @@ import UseStateDemoPage from "../views/UseStateDemoPage.js";
 
 
 export default {
-  "/": {
-    tag: LandingPage,
-  },
   "/home": {
     tag: LandingPage,
   },
@@ -70,6 +67,6 @@ export default {
     tag: UseStateDemoPage,
   },
   "*": {
-    tag: Page404,
+    tag: LandingPage,
   },
 };
