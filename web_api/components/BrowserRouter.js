@@ -10,9 +10,62 @@ export default function BrowserRouter(props) {
   const baseUrl = props.baseUrl ?? "";
   browserRouterOptions.baseUrl = baseUrl;
   
+  // Fonction pour matcher les routes avec paramètres
+  function matchRoute(routePath, actualPath) {
+    // Convertir les paramètres de route (:param) en regex
+    const routeParts = routePath.split('/');
+    const actualParts = actualPath.split('/');
+    
+    // Si le nombre de segments ne correspond pas, ce n'est pas une correspondance
+    if (routeParts.length !== actualParts.length) {
+      return null;
+    }
+    
+    const params = {};
+    
+    for (let i = 0; i < routeParts.length; i++) {
+      const routePart = routeParts[i];
+      const actualPart = actualParts[i];
+      
+      if (routePart.startsWith(':')) {
+        // C'est un paramètre
+        const paramName = routePart.slice(1);
+        params[paramName] = actualPart;
+      } else if (routePart !== actualPart) {
+        // Pas de correspondance pour les segments fixes
+        return null;
+      }
+    }
+    
+    return Object.keys(params).length > 0 ? params : null;
+  }
+  
   async function generatePage() {
     const path = window.location.pathname.slice(baseUrl.length);
-    const struct = routes[path] ?? routes["*"];
+    
+    // Nettoyer les paramètres de route précédents
+    window.routeParams = null;
+    
+    // Trouver la route correspondante (exact match d'abord)
+    let struct = routes[path];
+    
+    // Si pas de correspondance exacte, essayer les routes avec paramètres
+    if (!struct) {
+      for (const routePath of Object.keys(routes)) {
+        const routeParams = matchRoute(routePath, path);
+        if (routeParams) {
+          struct = routes[routePath];
+          window.routeParams = routeParams;
+          console.log('Route with params found:', routePath, 'Params:', routeParams);
+          break;
+        }
+      }
+    }
+    
+    // Fallback vers 404 si aucune route trouvée
+    if (!struct) {
+      struct = routes["*"];
+    }
     
     // Vérifier si nous sommes déjà sur la bonne page
     const currentPath = rootElement.getAttribute('data-current-path');
