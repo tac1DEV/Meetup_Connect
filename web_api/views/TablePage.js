@@ -1,4 +1,5 @@
-import { BrowserLink as Link } from "../components/BrowserRouter.js";
+import { BrowserLink } from "../components/BrowserRouter.js";
+import Layout from "../components/Layout.js";
 
 function onClick(event) {
   const td = event.currentTarget;
@@ -6,27 +7,35 @@ function onClick(event) {
   const text = textNode.textContent;
   const input = document.createElement("input");
   input.value = text;
+  input.style.width = "100%";
+  input.style.border = "none";
+  input.style.outline = "none";
+  input.style.fontSize = "inherit";
+  input.style.fontFamily = "inherit";
+  
+  // Remplacer le contenu
+  td.innerHTML = "";
   td.appendChild(input);
   input.focus();
-  td.removeChild(textNode);
-  //td.replaceChild(input, textNode);
-  td.removeEventListener("click", onClick);
-  input.addEventListener("blur", function onBlur(event) {
-    const input = event.currentTarget;
-    const text = input.value;
-    const textNode = document.createTextNode(text);
-    const td = input.parentNode;
-    td.replaceChild(textNode, input);
+  
+  // Gérer la perte de focus
+  input.addEventListener("blur", function onBlur() {
+    const newText = input.value;
+    td.textContent = newText;
     td.addEventListener("click", onClick);
-  });
+  }, { once: true });
+  
+  // Supprimer l'événement click temporairement
+  td.removeEventListener("click", onClick);
 }
 
-export default function TablePage() {
-  return {
+export default async function TablePage() {
+  const content = [
+    {
     tag: "div",
     children: [
       {
-        tag: Link,
+        tag: BrowserLink,
         attributes: [
           ["link", "/gallery"],
           ["title", "Gallery"],
@@ -61,7 +70,10 @@ export default function TablePage() {
         ],
       },
     ],
-  };
+  },
+];
+
+return Layout(content);
 }
 
 
