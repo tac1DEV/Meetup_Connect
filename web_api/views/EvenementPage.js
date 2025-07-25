@@ -8,170 +8,240 @@ export default async function EvenementPage() {
 
   const content = [
     {
-    
-    tag: "div",
-    attributes: [["class", "container mx-auto p-4 space-y-8"]],
-    children: [
-      // Titre de la page
-      {
-        tag: "h1",
-        attributes: [["class", "text-3xl font-bold text-center mb-8"]],
-        children: ["Liste des évènements"],
-      },
-
-      {
-        tag: "div",
-        attributes: [["class", "bg-gray-50 p-6 rounded-lg"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "flex justify-end items-center mb-4"]],
-            children: [
-              {
-                tag: BrowserLink,
-                attributes: [
-                  ["link", "/evenement/create"],
-                  ["title", "Nouvel événement"],
-                  [
-                    "class",
-                    "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium",
-                  ],
-                ],
-              },
-            ],
-          },
-          {
-            tag: "div",
-            attributes: [["class", "grid gap-4"]],
-            children: data.map((d) => ({
-              tag: "div",
+      tag: "div",
+      attributes: [["class", "container mx-auto p-4 space-y-8"]],
+      children: [
+        {
+          tag: "ul",
+          attributes: [["class", "flex justify-center gap-6 mb-6"]],
+          children: [
+            {
+              tag: "li",
               attributes: [
                 [
                   "class",
-                  "p-4 bg-white shadow rounded border border-gray-200 space-y-3",
+                  "px-4 py-2 text-black rounded hover:underline cursor-pointer transition",
                 ],
-                ["data-event-id", d.id],
               ],
+              children: ["Événements pour vous"],
+            },
+            {
+              tag: "li",
+              attributes: [
+                [
+                  "class",
+                  "px-4 py-2 text-black rounded hover:underline cursor-pointer transition",
+                ],
+              ],
+              children: ["Événements à proximité"],
+            },
+            {
+              tag: "li",
+              attributes: [
+                [
+                  "class",
+                  "px-4 py-2 text-black rounded hover:underline cursor-pointer transition",
+                ],
+              ],
+              children: ["Mes inscriptions"],
+            },
+          ],
+        },
+        {
+          tag: "ul",
+          attributes: [["class", "flex justify-center gap-4 mb-6 flex-wrap"]],
+          children: [
+            "Concert",
+            "Sport",
+            "Littérature",
+            "Restaurant",
+            "Automobile",
+            "Photo",
+          ].map((label) => ({
+            tag: "li",
+            attributes: [
+              [
+                "class",
+                "px-3 py-1 rounded cursor-pointer bg-opacity-50 bg-black transition font-bold text-white",
+              ],
+            ],
+            children: [label],
+          })),
+        },
+        {
+          tag: "ul",
+          attributes: [["class", "flex justify-center gap-4 mb-6 flex-wrap"]],
+          children: ["Prix", "Date", "Lieu", "Nombre de participants"].map(
+            (label) => ({
+              tag: "li",
+              attributes: [
+                [
+                  "class",
+                  "px-4 py-1 bg-gray-700 text-white rounded-full text-sm font-medium cursor-pointer hover:bg-gray-800 transition",
+                ],
+              ],
+              children: [label],
+            })
+          ),
+        },
+
+        {
+          tag: "div",
+          attributes: [["class", "bg-gray-50 p-6 rounded-lg"]],
+          children: [
+            {
+              tag: "div",
+              attributes: [["class", "flex justify-end items-center mb-4"]],
               children: [
                 {
-                  tag: "div",
-                  attributes: [["class", "flex justify-between items-start"]],
-                  children: [
-                    {
-                      tag: BrowserLink,
-                      attributes: [
-                        ["link", `/evenement/${d.id}`],
-                        ["title", d.nom || `Événement ${d.id}`],
-                        [
-                          "class",
-                          "text-xl font-semibold text-blue-600 hover:underline",
-                        ],
-                      ],
-                    },
-                    {
-                      tag: "div",
-                      attributes: [["class", "flex gap-2"]],
-                      children: [
-                        {
-                          tag: "button",
-                          attributes: [
-                            [
-                              "class",
-                              "px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm",
-                            ],
-                            ["data-action", "edit"],
-                            ["data-event-id", d.id],
-                          ],
-                          events: {
-                            click: [
-                              (e) => {
-                                const eventId =
-                                  e.target.getAttribute("data-event-id");
-                                toggleEditForm(eventId, d);
-                              },
-                            ],
-                          },
-                          children: ["Modifier"],
-                        },
-                        {
-                          tag: "button",
-                          attributes: [
-                            [
-                              "class",
-                              "px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm",
-                            ],
-                            ["data-action", "delete"],
-                            ["data-event-id", d.id],
-                          ],
-                          events: {
-                            click: [
-                              async (e) => {
-                                const eventId =
-                                  e.target.getAttribute("data-event-id");
-                                if (
-                                  confirm(
-                                    "Êtes-vous sûr de vouloir supprimer cet événement ?"
-                                  )
-                                ) {
-                                  await deleteEvent(eventId);
-                                }
-                              },
-                            ],
-                          },
-                          children: ["Supprimer"],
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  tag: "div",
+                  tag: BrowserLink,
                   attributes: [
-                    ["class", "grid grid-cols-1 md:grid-cols-2 gap-2 text-sm"],
-                  ],
-                  children: Object.entries(d)
-                    .filter(([key]) => key !== "id" && key !== "nom")
-                    .map(([key, value]) => ({
-                      tag: "div",
-                      attributes: [["class", "flex"]],
-                      children: [
-                        {
-                          tag: "span",
-                          attributes: [
-                            ["class", "font-medium text-gray-600 w-32"],
-                          ],
-                          children: [`${key}:`],
-                        },
-                        {
-                          tag: "span",
-                          attributes: [["class", "text-gray-800"]],
-                          children: [String(value ?? "N/A")],
-                        },
-                      ],
-                    })),
-                },
-                {
-                  tag: "div",
-                  attributes: [
-                    ["class", "hidden mt-4 p-4 bg-gray-50 rounded border"],
-                    ["data-edit-form", d.id],
-                  ],
-                  children: [
-                    {
-                      tag: "h4",
-                      attributes: [["class", "font-semibold mb-3"]],
-                      children: ["Modifier l'événement"],
-                    },
-                    createEditForm(d, communautes),
+                    ["link", "/evenement/create"],
+                    ["title", "Nouvel événement"],
+                    [
+                      "class",
+                      "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium",
+                    ],
                   ],
                 },
               ],
-            })),
-          },
-        ],
-      },
-    ],
-  },
+            },
+            {
+              tag: "div",
+              attributes: [["class", "grid gap-4"]],
+              children: data.map((d) => ({
+                tag: "div",
+                attributes: [
+                  [
+                    "class",
+                    "p-4 bg-white shadow rounded border border-gray-200 space-y-3",
+                  ],
+                  ["data-event-id", d.id],
+                ],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["class", "flex justify-between items-start"]],
+                    children: [
+                      {
+                        tag: BrowserLink,
+                        attributes: [
+                          ["link", `/evenement/${d.id}`],
+                          ["title", d.nom || `Événement ${d.id}`],
+                          [
+                            "class",
+                            "text-xl font-semibold text-blue-600 hover:underline",
+                          ],
+                        ],
+                      },
+                      {
+                        tag: "div",
+                        attributes: [["class", "flex gap-2"]],
+                        children: [
+                          {
+                            tag: "button",
+                            attributes: [
+                              [
+                                "class",
+                                "px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm",
+                              ],
+                              ["data-action", "edit"],
+                              ["data-event-id", d.id],
+                            ],
+                            events: {
+                              click: [
+                                (e) => {
+                                  const eventId =
+                                    e.target.getAttribute("data-event-id");
+                                  toggleEditForm(eventId, d);
+                                },
+                              ],
+                            },
+                            children: ["Modifier"],
+                          },
+                          {
+                            tag: "button",
+                            attributes: [
+                              [
+                                "class",
+                                "px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm",
+                              ],
+                              ["data-action", "delete"],
+                              ["data-event-id", d.id],
+                            ],
+                            events: {
+                              click: [
+                                async (e) => {
+                                  const eventId =
+                                    e.target.getAttribute("data-event-id");
+                                  if (
+                                    confirm(
+                                      "Êtes-vous sûr de vouloir supprimer cet événement ?"
+                                    )
+                                  ) {
+                                    await deleteEvent(eventId);
+                                  }
+                                },
+                              ],
+                            },
+                            children: ["Supprimer"],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+
+                  {
+                    tag: "div",
+                    attributes: [
+                      [
+                        "class",
+                        "grid grid-cols-1 md:grid-cols-2 gap-2 text-sm",
+                      ],
+                    ],
+                    children: Object.entries(d)
+                      .filter(([key]) => key !== "id" && key !== "nom")
+                      .map(([key, value]) => ({
+                        tag: "div",
+                        attributes: [["class", "flex"]],
+                        children: [
+                          {
+                            tag: "span",
+                            attributes: [
+                              ["class", "font-medium text-gray-600 w-32"],
+                            ],
+                            children: [`${key}:`],
+                          },
+                          {
+                            tag: "span",
+                            attributes: [["class", "text-gray-800"]],
+                            children: [String(value ?? "N/A")],
+                          },
+                        ],
+                      })),
+                  },
+                  {
+                    tag: "div",
+                    attributes: [
+                      ["class", "hidden mt-4 p-4 bg-gray-50 rounded border"],
+                      ["data-edit-form", d.id],
+                    ],
+                    children: [
+                      {
+                        tag: "h4",
+                        attributes: [["class", "font-semibold mb-3"]],
+                        children: ["Modifier l'événement"],
+                      },
+                      createEditForm(d, communautes),
+                    ],
+                  },
+                ],
+              })),
+            },
+          ],
+        },
+      ],
+    },
   ];
 
   return Layout(content);
