@@ -20,14 +20,6 @@ export default async function Layout(contentStruct) {
           {
             tag: BrowserLink,
             attributes: [
-              ["link", "/gallery"],
-              ["title", "Gallery"],
-              ["class", "text-blue-600 hover:underline"],
-            ],
-          },
-          {
-            tag: BrowserLink,
-            attributes: [
               ["link", "/evenement"],
               ["title", "Evenement"],
               ["class", "text-blue-600 hover:underline"],

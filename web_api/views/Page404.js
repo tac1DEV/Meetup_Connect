@@ -15,13 +15,20 @@ const Page404 = function () {
       {
         tag: Link,
         attributes: [
-          ["link", "/gallery"],
-          ["title", "Gallery"],
+          ["link", "/communautes"],
+          ["title", "Communautés"],
+        ],
+      },
+            {
+        tag: Link,
+        attributes: [
+          ["link", "/evenement"],
+          ["title", "Événements"],
         ],
       },
       {
         tag: "h1",
-        children: ["Tu t'es perdu !!! Game Over !!!"],
+        children: ["Tu t'es perdu !"],
       },
     ],
   };

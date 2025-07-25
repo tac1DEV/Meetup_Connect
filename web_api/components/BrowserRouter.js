@@ -126,22 +126,6 @@ export default function BrowserRouter(props) {
       }
     }, 100);
     
-    // Initialiser les optimisations spécifiques à la page
-    initPageOptimizations(path);
-  }
-  
-  function initPageOptimizations(path) {
-    // Initialiser le lazy loading pour la galerie
-    if (path === '/gallery') {
-      setTimeout(() => {
-        import('../views/GalleryPage.js').then(({ initGalleryLazyLoading }) => {
-          initGalleryLazyLoading();
-        }).catch(error => {
-          console.log('Lazy loading déjà initialisé ou non disponible', error);
-        });
-      }, 100);
-    }
-    
     // Initialiser le panel admin
     if (path === '/admin') {
       setTimeout(() => {

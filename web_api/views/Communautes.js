@@ -2,6 +2,7 @@ import { BrowserLink as Link } from "../components/BrowserRouter.js";
 import CommunauteService from "../services/CommunauteService.js";
 import CategorieService from "../services/CategorieService.js";
 import StateService from "../services/StateService.js";
+import SessionManager from "../utils/SessionManager.js";
 import {
 	ErrorHandler,
 	UIUtils,
@@ -136,10 +137,31 @@ export async function loadCommunautesData() {
 // Fonction pour gérer l'inscription à une communauté
 window.handleJoinCommunauteFromHome = async function (communauteId) {
 	try {
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError(
+				"Vous devez être connecté pour rejoindre une communauté."
+			);
+			SessionManager.requireAuth();
+			return;
+		}
+
+		// Vérifier les permissions
+		if (!(await SessionManager.canJoinCommunity())) {
+			SessionManager.showPermissionError(
+				"Vous n'avez pas les permissions pour rejoindre une communauté."
+			);
+			return;
+		}
+
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			SessionManager.showPermissionError(
+				"Impossible d'identifier l'utilisateur connecté."
+			);
+			return;
+		}
 
 		// Marquer comme en cours de chargement
 		const currentState = StateService.getState("communautes");
@@ -153,7 +175,7 @@ window.handleJoinCommunauteFromHome = async function (communauteId) {
 		// Rafraîchir l'affichage pour montrer le bouton de chargement
 		renderCommunautesPage();
 
-		// Faire l'inscription avec l'ID utilisateur existant
+		// Faire l'inscription avec l'ID utilisateur connecté
 		await CommunauteService.joinCommunaute(communauteId, userId);
 
 		// Recharger le nombre de membres pour cette communauté
@@ -203,10 +225,23 @@ window.handleJoinCommunauteFromHome = async function (communauteId) {
 // Fonction pour gérer la désinscription d'une communauté
 window.handleLeaveCommunauteFromHome = async function (communauteId) {
 	try {
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError(
+				"Vous devez être connecté pour quitter une communauté."
+			);
+			SessionManager.requireAuth();
+			return;
+		}
+
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			SessionManager.showPermissionError(
+				"Impossible d'identifier l'utilisateur connecté."
+			);
+			return;
+		}
 
 		// Marquer comme en cours de chargement
 		const currentState = StateService.getState("communautes");
@@ -267,15 +302,65 @@ window.handleLeaveCommunauteFromHome = async function (communauteId) {
 	}
 };
 
+// Fonction pour générer le bouton de création de communauté (avec permissions)
+async function generateCreateCommunityButton() {
+	// Vérifier si l'utilisateur est connecté et peut créer des communautés
+	const isAuthenticated = SessionManager.isAuthenticated();
+	const canCreate =
+		isAuthenticated && (await SessionManager.canCreateCommunity());
+
+	if (!canCreate) {
+		// Si l'utilisateur n'est pas connecté ou n'a pas les permissions, ne pas afficher le bouton
+		return null;
+	}
+
+	return {
+		tag: "button",
+		attributes: [
+			[
+				"style",
+				{
+					padding: "10px 15px",
+					backgroundColor: "#4730DC",
+					color: "white",
+					border: "none",
+					borderRadius: "5px",
+					cursor: "pointer",
+					fontSize: "14px",
+				},
+			],
+		],
+		events: {
+			click: [showCreateForm],
+			mouseenter: [(e) => (e.currentTarget.style.backgroundColor = "#1976d2")],
+			mouseleave: [(e) => (e.currentTarget.style.backgroundColor = "#4730DC")],
+		},
+		children: ["Créer une communauté"],
+	};
+}
+
 // Fonction pour charger l'état d'inscription pour toutes les communautés
 async function loadSubscriptionStates() {
 	try {
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			console.log(
+				"Utilisateur non connecté - pas de chargement des états d'inscription"
+			);
+			return;
+		}
+
 		const state = StateService.getState("communautes");
 		const subscriptions = {};
-		// Obtenir l'ID utilisateur (utilisateur existant en base)
-		const userId = window.AuthUtils
-			? window.AuthUtils.getCurrentUserId()
-			: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+
+		// Obtenir l'ID utilisateur connecté
+		const userId = SessionManager.getCurrentUserId();
+		if (!userId) {
+			console.warn(
+				"Impossible d'obtenir l'ID utilisateur pour charger les états d'inscription"
+			);
+			return;
+		}
 
 		// Charger l'état d'inscription pour chaque communauté
 		for (const communaute of state.communautes) {
@@ -391,23 +476,41 @@ async function createCommunaute(formData, imageUrl = null) {
 }
 
 // Fonction pour afficher le formulaire de création
-function showCreateForm() {
-	// Vérifier que les catégories sont chargées
-	const state = StateService.getState("communautes");
-	if (state.categories.length === 0) {
-		UIUtils.showToast(
-			"Les catégories ne sont pas encore chargées. Veuillez attendre le chargement complet de la page ou cliquer sur 'Actualiser'.",
-			"error"
-		);
-		return;
-	}
+async function showCreateForm() {
+	try {
+		// Vérifier l'authentification
+		if (!SessionManager.isAuthenticated()) {
+			SessionManager.showPermissionError(
+				"Vous devez être connecté pour créer une communauté."
+			);
+			SessionManager.requireAuth();
+			return;
+		}
 
-	// Variable pour stocker l'URL de l'image uploadée
-	let uploadedImageUrl = null;
+		// Vérifier les permissions
+		if (!(await SessionManager.canCreateCommunity())) {
+			SessionManager.showPermissionError(
+				"Vous n'avez pas les permissions pour créer une communauté."
+			);
+			return;
+		}
 
-	const modal = UIUtils.createModal(
-		"Créer une nouvelle communauté",
-		`
+		// Vérifier que les catégories sont chargées
+		const state = StateService.getState("communautes");
+		if (state.categories.length === 0) {
+			UIUtils.showToast(
+				"Les catégories ne sont pas encore chargées. Veuillez attendre le chargement complet de la page ou cliquer sur 'Actualiser'.",
+				"error"
+			);
+			return;
+		}
+
+		// Variable pour stocker l'URL de l'image uploadée
+		let uploadedImageUrl = null;
+
+		const modal = UIUtils.createModal(
+			"Créer une nouvelle communauté",
+			`
       <form id="createCommunauteForm">
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 8px; font-weight: bold;">Image de la communauté (optionnel)</label>
@@ -464,89 +567,96 @@ function showCreateForm() {
         </div>
       </form>
     `
-	);
+		);
 
-	// Fonction pour créer l'uploader Supabase
-	function createUploader() {
-		const container = document.getElementById("imageUploaderContainer");
-		if (!container) return;
+		// Fonction pour créer l'uploader Supabase
+		function createUploader() {
+			const container = document.getElementById("imageUploaderContainer");
+			if (!container) return;
 
-		// Vider le container
-		container.innerHTML = "";
+			// Vider le container
+			container.innerHTML = "";
 
-		try {
-			const uploader = SupabaseImageUploader({
-				onImageUploaded: (imageUrl, result) => {
-					uploadedImageUrl = imageUrl;
-					console.log("Image uploadée avec Supabase Storage:", imageUrl);
-					if (result && result.notice) {
-						console.info("Info:", result.notice);
-					}
-				},
-				className: "create-community-uploader",
-				bucketName: "community-images",
-			});
+			try {
+				const uploader = SupabaseImageUploader({
+					onImageUploaded: (imageUrl, result) => {
+						uploadedImageUrl = imageUrl;
+						console.log("Image uploadée avec Supabase Storage:", imageUrl);
+						if (result && result.notice) {
+							console.info("Info:", result.notice);
+						}
+					},
+					className: "create-community-uploader",
+					bucketName: "community-images",
+				});
 
-			container.appendChild(uploader);
-			console.log("Composant Supabase Storage ajouté au formulaire");
-		} catch (error) {
-			console.error("Erreur lors de l'ajout de l'uploader Supabase:", error);
-			const errorDiv = createElement({
-				tag: "div",
-				attributes: [
-					[
-						"style",
-						{
-							padding: "20px",
-							background: "#ffebee",
-							border: "1px solid #f44336",
-							borderRadius: "4px",
-							color: "#d32f2f",
-						},
+				container.appendChild(uploader);
+				console.log("Composant Supabase Storage ajouté au formulaire");
+			} catch (error) {
+				console.error("Erreur lors de l'ajout de l'uploader Supabase:", error);
+				const errorDiv = createElement({
+					tag: "div",
+					attributes: [
+						[
+							"style",
+							{
+								padding: "20px",
+								background: "#ffebee",
+								border: "1px solid #f44336",
+								borderRadius: "4px",
+								color: "#d32f2f",
+							},
+						],
 					],
-				],
-				children: [
-					`Erreur lors du chargement de Supabase Storage: ${error.message}`,
-					createElement({ tag: "br" }),
-					createElement({ tag: "br" }),
-					createElement({
-						tag: "strong",
-						children: ["Configuration requise :"],
-					}),
-					createElement({ tag: "br" }),
-					'1. Créer le bucket "community-images" dans le dashboard Supabase',
-					createElement({ tag: "br" }),
-					"2. Configurer les politiques RLS pour l'upload public",
-					createElement({ tag: "br" }),
-					"3. Consulter le guide SUPABASE_BUCKET_SETUP.md",
-				],
-			});
-			container.appendChild(errorDiv);
+					children: [
+						`Erreur lors du chargement de Supabase Storage: ${error.message}`,
+						createElement({ tag: "br" }),
+						createElement({ tag: "br" }),
+						createElement({
+							tag: "strong",
+							children: ["Configuration requise :"],
+						}),
+						createElement({ tag: "br" }),
+						'1. Créer le bucket "community-images" dans le dashboard Supabase',
+						createElement({ tag: "br" }),
+						"2. Configurer les politiques RLS pour l'upload public",
+						createElement({ tag: "br" }),
+						"3. Consulter le guide SUPABASE_BUCKET_SETUP.md",
+					],
+				});
+				container.appendChild(errorDiv);
+			}
 		}
-	}
 
-	// Initialiser l'uploader Supabase
-	setTimeout(() => {
-		createUploader();
-	}, 100);
+		// Initialiser l'uploader Supabase
+		setTimeout(() => {
+			createUploader();
+		}, 100);
 
-	// Gérer la soumission du formulaire
-	document.getElementById("createCommunauteForm").onsubmit = async (e) => {
-		e.preventDefault();
+		// Gérer la soumission du formulaire
+		document.getElementById("createCommunauteForm").onsubmit = async (e) => {
+			e.preventDefault();
 
-		const formData = {
-			nom: document.getElementById("nom").value,
-			description: document.getElementById("description").value,
-			id_categorie: document.getElementById("id_categorie").value,
-			nombre_max_membres: document.getElementById("nombre_max_membres").value,
+			const formData = {
+				nom: document.getElementById("nom").value,
+				description: document.getElementById("description").value,
+				id_categorie: document.getElementById("id_categorie").value,
+				nombre_max_membres: document.getElementById("nombre_max_membres").value,
+			};
+
+			await createCommunaute(formData, uploadedImageUrl);
+			modal.remove();
 		};
 
-		await createCommunaute(formData, uploadedImageUrl);
-		modal.remove();
-	};
-
-	// Focus sur le premier champ
-	setTimeout(() => document.getElementById("nom").focus(), 200);
+		// Focus sur le premier champ
+		setTimeout(() => document.getElementById("nom").focus(), 200);
+	} catch (error) {
+		ErrorHandler.logError(error, "Communautes.showCreateForm");
+		UIUtils.showToast(
+			"Erreur lors de l'ouverture du formulaire: " + error.message,
+			"error"
+		);
+	}
 }
 
 // Fonction pour éditer une communauté
@@ -863,7 +973,7 @@ async function renderCommunautesPage() {
 	const rootElement = document.getElementById("root");
 	if (!rootElement) return;
 
-	const CommunautesPageStructure = CommunautesPage();
+	const CommunautesPageStructure = await CommunautesPage();
 	const newPage = await generateStructure(CommunautesPageStructure);
 
 	if (rootElement.firstChild) {
@@ -1392,7 +1502,7 @@ function CommunauteCard({ communaute }) {
 }
 
 // Composant principal de la page d'accueil
-export default function CommunautesPage() {
+export default async function CommunautesPage() {
 	// Récupérer l'état actuel
 	const state = StateService.getState("communautes");
 
@@ -1400,7 +1510,9 @@ export default function CommunautesPage() {
 	const shouldReload = sessionStorage.getItem("shouldReloadCommunautesPage");
 	if (shouldReload === "true") {
 		sessionStorage.removeItem("shouldReloadCommunautesPage");
-		console.log("Rechargement forcé des données CommunautesPage après suppression");
+		console.log(
+			"Rechargement forcé des données CommunautesPage après suppression"
+		);
 		setTimeout(() => loadData(), 100);
 	} else {
 		// Charger les données au premier rendu normal
@@ -1409,305 +1521,223 @@ export default function CommunautesPage() {
 		}
 	}
 
+	// Générer le bouton de création avec permissions
+	const createButton = await generateCreateCommunityButton();
+
+	// Obtenir les communautés filtrées
+	const filteredCommunautes = getFilteredCommunautes();
+
 	const content = [
 		{
-		tag: "div",
-		attributes: [
-			[
-				"style",
-				{
-					fontFamily: "Arial, sans-serif",
-					maxWidth: "1200px",
-					margin: "0 auto",
-					padding: "20px",
-					backgroundColor: "#f5f5f5",
-					minHeight: "100vh",
-				},
+			tag: "div",
+			attributes: [
+				[
+					"style",
+					{
+						fontFamily: "Arial, sans-serif",
+						maxWidth: "1200px",
+						margin: "0 auto",
+						padding: "20px",
+						backgroundColor: "#f5f5f5",
+						minHeight: "100vh",
+					},
+				],
 			],
-		],
-		children: [
-			// Header
-			{
-				tag: "header",
-				attributes: [
-					[
-						"style",
-						{
-							backgroundColor: "#4730DC",
-							color: "white",
-							padding: "20px",
-							borderRadius: "8px",
-							marginBottom: "30px",
-							textAlign: "center",
-						},
-					],
-				],
-				children: [
-					{
-						tag: "h1",
-						attributes: [["style", { margin: "0", fontSize: "32px" }]],
-						children: ["Bienvenue sur votre plateforme communautaire"],
-					},
-					{
-						tag: "p",
-						attributes: [
-							[
-								"style",
-								{ margin: "10px 0 0", fontSize: "16px", opacity: "0.9" },
-							],
-						],
-						children: [
-							"Découvrez des communautés passionnantes et participez à des événements uniques",
-						],
-					},
-				],
-			},
-
-			// Navigation
-			{
-				tag: "nav",
-				attributes: [
-					[
-						"style",
-						{
-							display: "flex",
-							gap: "10px",
-							marginBottom: "30px",
-							flexWrap: "wrap",
-						},
-					],
-				],
-				children: [
-					{
-						tag: "a",
-						attributes: [
-							["href", "/web_api/gallery"],
-							[
-								"style",
-								{
-									display: "inline-block",
-									padding: "10px 15px",
-									backgroundColor: "#ff9800",
-									color: "white",
-									textDecoration: "none",
-									borderRadius: "5px",
-									fontSize: "14px",
-								},
-							],
-						],
-						events: {
-							click: [
-								(e) => {
-									e.preventDefault();
-									window.history.pushState({}, "", `/web_api/gallery`);
-									window.dispatchEvent(new Event("pushstate"));
-								},
-							],
-						},
-						children: ["Galerie"],
-					},
-					{
-						tag: "button",
-						attributes: [
-							[
-								"style",
-								{
-									padding: "10px 15px",
-									backgroundColor: "#4caf50",
-									color: "white",
-									border: "none",
-									borderRadius: "5px",
-									cursor: "pointer",
-									fontSize: "14px",
-								},
-							],
-						],
-						events: {
-							click: [loadData],
-							mouseenter: [
-								(e) => (e.currentTarget.style.backgroundColor = "#45a049"),
-							],
-							mouseleave: [
-								(e) => (e.currentTarget.style.backgroundColor = "#4caf50"),
-							],
-						},
-						children: ["Actualiser"],
-					},
-					{
-						tag: "button",
-						attributes: [
-							[
-								"style",
-								{
-									padding: "10px 15px",
-									backgroundColor: "#4730DC",
-									color: "white",
-									border: "none",
-									borderRadius: "5px",
-									cursor: "pointer",
-									fontSize: "14px",
-								},
-							],
-						],
-						events: {
-							click: [showCreateForm],
-							mouseenter: [
-								(e) => (e.currentTarget.style.backgroundColor = "#1976d2"),
-							],
-							mouseleave: [
-								(e) => (e.currentTarget.style.backgroundColor = "#4730DC"),
-							],
-						},
-						children: ["Créer une communauté"],
-					},
-				],
-			},
-
-			// Contenu principal
-			state.loading
-				? {
-						tag: "div",
-						attributes: [
-							[
-								"style",
-								{
-									textAlign: "center",
-									padding: "50px",
-									backgroundColor: "white",
-									borderRadius: "8px",
-								},
-							],
-						],
-						children: [
+			children: [
+				// Navigation
+				{
+					tag: "nav",
+					attributes: [
+						[
+							"style",
 							{
-								tag: "p",
-								attributes: [["style", { fontSize: "18px", color: "#666" }]],
-								children: ["Chargement des données..."],
+								display: "flex",
+								gap: "10px",
+								marginBottom: "30px",
+								flexWrap: "wrap",
 							},
 						],
-				  }
-				: state.error
-				? {
-						tag: "div",
-						attributes: [
-							[
-								"style",
+					],
+					children: [
+						{
+							tag: "button",
+							attributes: [
+								[
+									"style",
+									{
+										padding: "10px 15px",
+										backgroundColor: "#4caf50",
+										color: "white",
+										border: "none",
+										borderRadius: "5px",
+										cursor: "pointer",
+										fontSize: "14px",
+									},
+								],
+							],
+							events: {
+								click: [loadData],
+								mouseenter: [
+									(e) => (e.currentTarget.style.backgroundColor = "#45a049"),
+								],
+								mouseleave: [
+									(e) => (e.currentTarget.style.backgroundColor = "#4caf50"),
+								],
+							},
+							children: ["Actualiser"],
+						},
+						// Ajouter conditionnellement le bouton de création
+						...(createButton ? [createButton] : []),
+					],
+				},
+
+				// Contenu principal
+				state.loading
+					? {
+							tag: "div",
+							attributes: [
+								[
+									"style",
+									{
+										textAlign: "center",
+										padding: "50px",
+										backgroundColor: "white",
+										borderRadius: "8px",
+									},
+								],
+							],
+							children: [
 								{
-									textAlign: "center",
-									padding: "50px",
-									backgroundColor: "#ffebee",
-									borderRadius: "8px",
-									border: "1px solid #f44336",
+									tag: "p",
+									attributes: [["style", { fontSize: "18px", color: "#666" }]],
+									children: ["Chargement des données..."],
 								},
 							],
-						],
-						children: [
-							{
-								tag: "p",
-								attributes: [["style", { fontSize: "18px", color: "#d32f2f" }]],
-								children: [`Erreur: ${state.error}`],
-							},
-							{
-								tag: "p",
-								attributes: [
-									[
-										"style",
-										{ fontSize: "14px", color: "#666", marginTop: "10px" },
+					  }
+					: state.error
+					? {
+							tag: "div",
+							attributes: [
+								[
+									"style",
+									{
+										textAlign: "center",
+										padding: "50px",
+										backgroundColor: "#ffebee",
+										borderRadius: "8px",
+										border: "1px solid #f44336",
+									},
+								],
+							],
+							children: [
+								{
+									tag: "p",
+									attributes: [
+										["style", { fontSize: "18px", color: "#d32f2f" }],
 									],
-								],
-								children: [
-									"Vérifiez votre configuration Supabase dans config.js",
-								],
-							},
-						],
-				  }
-				: {
-						tag: "div",
-						children: [
-							// Filtres de catégories
-							CategoryFilters(),
+									children: [`Erreur: ${state.error}`],
+								},
+								{
+									tag: "p",
+									attributes: [
+										[
+											"style",
+											{ fontSize: "14px", color: "#666", marginTop: "10px" },
+										],
+									],
+									children: [
+										"Vérifiez votre configuration Supabase dans config.js",
+									],
+								},
+							],
+					  }
+					: {
+							tag: "div",
+							children: [
+								// Filtres de catégories
+								CategoryFilters(),
 
-							// Section Communautés
-							{
-								tag: "section",
-								attributes: [["style", { marginBottom: "40px" }]],
-								children: [
-									{
-										tag: "h2",
-										attributes: [
-											[
-												"style",
-												{
-													color: "#333",
-													paddingBottom: "10px",
-													marginBottom: "20px",
-												},
+								// Section Communautés
+								{
+									tag: "section",
+									attributes: [["style", { marginBottom: "40px" }]],
+									children: [
+										{
+											tag: "h2",
+											attributes: [
+												[
+													"style",
+													{
+														color: "#333",
+														paddingBottom: "10px",
+														marginBottom: "20px",
+													},
+												],
 											],
-										],
-										children: [
-											state.selectedCategoryId
-												? `Communautés - ${
-														state.categories.find(
-															(c) => c.id === state.selectedCategoryId
-														)?.nom || "Catégorie"
-												  }`
-												: "Toutes les communautés",
-										],
-									},
-									{
-										tag: "div",
-										attributes: [
-											[
-												"style",
-												{
-													display: "grid",
-													gridTemplateColumns:
-														"repeat(auto-fit, minmax(300px, 1fr))",
-													gap: "16px",
-												},
+											children: [
+												state.selectedCategoryId
+													? `Communautés - ${
+															state.categories.find(
+																(c) => c.id === state.selectedCategoryId
+															)?.nom || "Catégorie"
+													  }`
+													: "Toutes les communautés",
 											],
-										],
-										children: (() => {
-											const filteredCommunautes = getFilteredCommunautes();
-											return filteredCommunautes.length > 0
-												? filteredCommunautes.map((communaute) =>
-														CommunauteCard({ communaute })
-												  )
-												: [
-														{
-															tag: "p",
-															attributes: [
-																[
-																	"style",
-																	{
-																		textAlign: "center",
-																		color: "#666",
-																		gridColumn: "1 / -1",
-																		padding: "20px",
-																		backgroundColor: "#f9f9f9",
-																		borderRadius: "8px",
-																		border: "1px solid #ddd",
-																	},
+										},
+										{
+											tag: "div",
+											attributes: [
+												[
+													"style",
+													{
+														display: "grid",
+														gridTemplateColumns:
+															"repeat(auto-fit, minmax(300px, 1fr))",
+														gap: "16px",
+													},
+												],
+											],
+											children: (() => {
+												const filteredCommunautes = getFilteredCommunautes();
+												return filteredCommunautes.length > 0
+													? filteredCommunautes.map((communaute) =>
+															CommunauteCard({ communaute })
+													  )
+													: [
+															{
+																tag: "p",
+																attributes: [
+																	[
+																		"style",
+																		{
+																			textAlign: "center",
+																			color: "#666",
+																			gridColumn: "1 / -1",
+																			padding: "20px",
+																			backgroundColor: "#f9f9f9",
+																			borderRadius: "8px",
+																			border: "1px solid #ddd",
+																		},
+																	],
 																],
-															],
-															children: [
-																state.selectedCategoryId
-																	? `Aucune communauté trouvée pour cette catégorie`
-																	: "Aucune communauté trouvée",
-															],
-														},
-												  ];
-										})(),
-									},
-								],
-							},
-						],
-				  },
-		],
-	},
-];
+																children: [
+																	state.selectedCategoryId
+																		? `Aucune communauté trouvée pour cette catégorie`
+																		: "Aucune communauté trouvée",
+																],
+															},
+													  ];
+											})(),
+										},
+									],
+								},
+							],
+					  },
+			],
+		},
+	];
 
-return Layout(content);
+	return Layout(content);
 }
 
 // Exporter les fonctions pour les tests et usage externe

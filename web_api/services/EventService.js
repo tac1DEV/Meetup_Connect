@@ -8,14 +8,9 @@ class EventService {
 			const {
 				limit = 50,
 				where = {},
-				orderBy = "date_evenement.asc",
+				orderBy = "date.asc",
 			} = options;
-			return await supabase.query("evenements", {
-				select: "*,communautes(*),utilisateurs(*)",
-				limit,
-				where,
-				orderBy,
-			});
+			return await supabase.getEvenements(limit);
 		} catch (error) {
 			console.error("Erreur lors du chargement des événements:", error);
 			throw new Error(`Impossible de charger les événements: ${error.message}`);
@@ -28,10 +23,7 @@ class EventService {
 			if (!communauteId) {
 				throw new Error("ID de communauté requis");
 			}
-			return await this.getEvents({
-				where: { id_communaute: communauteId },
-				orderBy: "date_evenement.asc",
-			});
+			return await supabase.getEvenementsByCommunaute(communauteId);
 		} catch (error) {
 			console.error(
 				"Erreur lors du chargement des événements de la communauté:",
@@ -47,17 +39,7 @@ class EventService {
 			if (!eventId) {
 				throw new Error("ID d'événement requis");
 			}
-			const events = await supabase.query("evenements", {
-				select: "*,communautes(*),utilisateurs(*)",
-				where: { id: eventId },
-				limit: 1,
-			});
-
-			if (events.length === 0) {
-				throw new Error("Événement non trouvé");
-			}
-
-			return events[0];
+			return await supabase.getEvenementById(eventId);
 		} catch (error) {
 			console.error("Erreur lors du chargement de l'événement:", error);
 			throw new Error(`Impossible de charger l'événement: ${error.message}`);
@@ -68,7 +50,7 @@ class EventService {
 	async createEvent(eventData) {
 		try {
 			this._validateEventData(eventData);
-			return await supabase.insert("evenements", eventData);
+			return await supabase.createEvenement(eventData);
 		} catch (error) {
 			console.error("Erreur lors de la création de l'événement:", error);
 			throw error;
@@ -81,7 +63,7 @@ class EventService {
 			if (!eventId) {
 				throw new Error("ID d'événement requis");
 			}
-			return await supabase.update("evenements", updateData, { id: eventId });
+			return await supabase.updateEvenement(eventId, updateData);
 		} catch (error) {
 			console.error("Erreur lors de la mise à jour de l'événement:", error);
 			throw new Error(
@@ -96,7 +78,7 @@ class EventService {
 			if (!eventId) {
 				throw new Error("ID d'événement requis");
 			}
-			return await supabase.delete("evenements", { id: eventId });
+			return await supabase.deleteEvenement(eventId);
 		} catch (error) {
 			console.error("Erreur lors de la suppression de l'événement:", error);
 			throw new Error(`Impossible de supprimer l'événement: ${error.message}`);
@@ -125,7 +107,7 @@ class EventService {
 
 			// Vérifier si l'utilisateur n'est pas déjà inscrit
 			const existingInscription = await supabase.query(
-				"inscriptions_evenements",
+				"participe",
 				{
 					where: { id_evenement: eventId, id_utilisateur: userId },
 					limit: 1,
@@ -139,7 +121,7 @@ class EventService {
 			// Vérifier la capacité de l'événement
 			const event = await this.getEventById(eventId);
 			if (event.nombre_max_participants) {
-				const inscriptions = await supabase.query("inscriptions_evenements", {
+				const inscriptions = await supabase.query("participe", {
 					where: { id_evenement: eventId },
 				});
 
@@ -149,10 +131,10 @@ class EventService {
 			}
 
 			// Créer l'inscription
-			return await supabase.insert("inscriptions_evenements", {
+			return await supabase.insert("participe", {
 				id_evenement: eventId,
 				id_utilisateur: userId,
-				date_inscription: new Date().toISOString(),
+				date_participation: new Date().toISOString(),
 			});
 		} catch (error) {
 			console.error("Erreur lors de l'inscription à l'événement:", error);
@@ -180,7 +162,7 @@ class EventService {
 				throw new Error("ID utilisateur requis - utilisateur non connecté");
 			}
 
-			return await supabase.delete("inscriptions_evenements", {
+			return await supabase.delete("participe", {
 				id_evenement: eventId,
 				id_utilisateur: userId,
 			});
@@ -199,8 +181,11 @@ class EventService {
 				throw new Error("ID d'événement requis");
 			}
 
-			return await supabase.query("inscriptions_evenements", {
-				select: "*,utilisateurs(*)",
+			return await supabase.query("participe", {
+				select: `
+					*,
+					utilisateur:id_utilisateur(nom, prenom, pseudo)
+				`,
 				where: { id_evenement: eventId },
 			});
 		} catch (error) {
