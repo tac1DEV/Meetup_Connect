@@ -268,35 +268,6 @@ class SupabaseClient {
       return false;
     }
   }
-
-  // Méthode pour récupérer les communautés
-  async getCommunautes(limit = 6, offset = 0) {
-    try {
-      const result = await this.query('communaute', {
-        select: '*',
-        limit: limit,
-        orderBy: 'created_at.desc'
-      });
-      return result;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des communautés:', error);
-      throw error;
-    }
-  }
-
-  // Méthode pour récupérer les catégories
-  async getCategories() {
-    try {
-      const result = await this.query('categorie', {
-        select: '*',
-        orderBy: 'nom.asc'
-      });
-      return result;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des catégories:', error);
-      throw error;
-    }
-  }
 }
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
