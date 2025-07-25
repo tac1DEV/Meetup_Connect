@@ -30,6 +30,9 @@ export default {
   "/communaute": {
     tag: CommunautePage,
   },
+  "/communaute/:id": {
+    tag: CommunautePage,
+  },
 
   "/evenement": {
     tag: EvenementPage,

@@ -1,4 +1,4 @@
-import supabase from "../../config.js";
+import supabase from "../config.js";
 
 // Service pour gérer l'upload de fichiers avec Supabase Storage
 class FileUploadService {

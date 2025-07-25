@@ -51,6 +51,7 @@ export default function Header() {
             }]],
             children: [
               navLink("/home", "Accueil"),
+              navLink("/communautes", "Communautés"),
               navLink("/evenement", "Événements"),
               navLink("/gallery", "Galerie"),
               navLink("/profile", "Profil"),

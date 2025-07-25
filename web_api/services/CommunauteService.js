@@ -1,4 +1,4 @@
-import supabase from "../../config.js";
+import supabase from "../config.js";
 
 // Service pour gérer les opérations liées aux communautés
 class CommunauteService {

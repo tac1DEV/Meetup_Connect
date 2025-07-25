@@ -532,157 +532,74 @@ class SupabaseClient {
 		}
 	}
 
-  async query(table, options = {}) {
-    const { select = "*", limit, where, orderBy } = options;
+	async query(table, options = {}) {
+		const { select = "*", limit, where, orderBy } = options;
 
-    let url = `${this.baseURL}/${table}?select=${select}`;
+		let url = `${this.baseURL}/${table}?select=${select}`;
 
-    if (where) {
-      Object.keys(where).forEach((key) => {
-        const value = where[key];
+		if (where) {
+			Object.keys(where).forEach((key) => {
+				const value = where[key];
 
-        // Si la valeur est un objet avec un opérateur
-        if (
-          typeof value === "object" &&
-          value !== null &&
-          !Array.isArray(value)
-        ) {
-          const operator = Object.keys(value)[0];
-          const operatorValue = value[operator];
+				// Si la valeur est un objet avec un opérateur
+				if (
+					typeof value === "object" &&
+					value !== null &&
+					!Array.isArray(value)
+				) {
+					const operator = Object.keys(value)[0];
+					const operatorValue = value[operator];
 
-          switch (operator) {
-            case "eq":
-              url += `&${key}=eq.${operatorValue}`;
-              break;
-            case "neq":
-              url += `&${key}=neq.${operatorValue}`;
-              break;
-            case "gt":
-              url += `&${key}=gt.${operatorValue}`;
-              break;
-            case "gte":
-              url += `&${key}=gte.${operatorValue}`;
-              break;
-            case "lt":
-              url += `&${key}=lt.${operatorValue}`;
-              break;
-            case "lte":
-              url += `&${key}=lte.${operatorValue}`;
-              break;
-            case "like":
-              url += `&${key}=like.${operatorValue}`;
-              break;
-            case "ilike":
-              url += `&${key}=ilike.${operatorValue}`;
-              break;
-            case "in":
-              if (Array.isArray(operatorValue)) {
-                url += `&${key}=in.(${operatorValue.join(",")})`;
-              }
-              break;
-            case "is":
-              url += `&${key}=is.${operatorValue}`;
-              break;
-            default:
-              url += `&${key}=eq.${operatorValue}`;
-          }
-        } else {
-          url += `&${key}=eq.${value}`;
-        }
-      });
-    }
-
-    if (orderBy) {
-      url += `&order=${orderBy}`;
-    }
-
-    if (limit) {
-      url += `&limit=${limit}`;
-    }
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Erreur Supabase:", error);
-      return [];
-    }
-  }
-
-	async register(email, password) {
-		const url = `${this.url}/auth/v1/signup`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, password }),
+					switch (operator) {
+						case "eq":
+							url += `&${key}=eq.${operatorValue}`;
+							break;
+						case "neq":
+							url += `&${key}=neq.${operatorValue}`;
+							break;
+						case "gt":
+							url += `&${key}=gt.${operatorValue}`;
+							break;
+						case "gte":
+							url += `&${key}=gte.${operatorValue}`;
+							break;
+						case "lt":
+							url += `&${key}=lt.${operatorValue}`;
+							break;
+						case "lte":
+							url += `&${key}=lte.${operatorValue}`;
+							break;
+						case "like":
+							url += `&${key}=like.${operatorValue}`;
+							break;
+						case "ilike":
+							url += `&${key}=ilike.${operatorValue}`;
+							break;
+						case "in":
+							if (Array.isArray(operatorValue)) {
+								url += `&${key}=in.(${operatorValue.join(",")})`;
+							}
+							break;
+						case "is":
+							url += `&${key}=is.${operatorValue}`;
+							break;
+						default:
+							url += `&${key}=eq.${operatorValue}`;
+					}
+				} else {
+					url += `&${key}=eq.${value}`;
+				}
 			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.error?.message || "Erreur d'inscription");
-			return data;
-		} catch (error) {
-			console.error("Erreur register:", error);
-			return { error: error.message };
 		}
-	}
 
-	async login(email, password) {
-		const url = `${this.url}/auth/v1/token?grant_type=password`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, password }),
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.error?.description || "Erreur de connexion");
-			return data;
-		} catch (error) {
-			console.error("Erreur login:", error);
-			return { error: error.message };
+		if (orderBy) {
+			url += `&order=${orderBy}`;
 		}
-	}
 
-	async createUtilisateur({ id, nom, prenom, pseudo, telephone = null, avatar = null, bio = null }) {
-		const url = `${this.baseURL}/utilisateur`;
-		try {
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					apikey: this.key,
-					Authorization: `Bearer ${this.key}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ id, nom, prenom, pseudo, telephone, avatar, bio }),
-			});
-			const data = await response.json();
-			if (!response.ok) throw new Error(data.message || "Erreur création utilisateur");
-			return data;
-		} catch (error) {
-			console.error("Erreur createUtilisateur:", error);
-			return { error: error.message };
+		if (limit) {
+			url += `&limit=${limit}`;
 		}
-	}
 
-	async getUtilisateur(userId) {
-		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
 		try {
 			const response = await fetch(url, {
 				headers: {
@@ -691,106 +608,197 @@ class SupabaseClient {
 					"Content-Type": "application/json",
 				},
 			});
-			const data = await response.json();
-			if (!response.ok) throw new Error("Erreur récupération utilisateur");
-			return data[0] || null;
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			return await response.json();
 		} catch (error) {
-			console.error("Erreur getUtilisateur:", error);
-			return null;
+			console.error("Erreur Supabase:", error);
+			return [];
 		}
 	}
 
-	async updateUtilisateur(userId, updates) {
-		const url = `${this.baseURL}/utilisateur?id=eq.${userId}`;
+	// Méthodes génériques pour compatibilité
+	async create(table, data) {
+		return this.insert(table, data);
+	}
+
+	get storage() {
+		return new SupabaseStorage(this.url, this.key);
+	}
+}
+
+// Classe pour gérer Supabase Storage
+class SupabaseStorage {
+	constructor(url, key) {
+		this.url = url;
+		this.key = key;
+		this.storageURL = `${url}/storage/v1/object`;
+	}
+
+	// Obtenir une référence à un bucket
+	from(bucketName) {
+		return new SupabaseBucket(this.url, this.key, bucketName);
+	}
+
+	// Lister tous les buckets
+	async listBuckets() {
 		try {
-			const response = await fetch(url, {
-				method: "PATCH",
+			const response = await fetch(`${this.url}/storage/v1/bucket`, {
 				headers: {
-					apikey: this.key,
 					Authorization: `Bearer ${this.key}`,
-					"Content-Type": "application/json",
-					"Prefer": "return=minimal"
+					apikey: this.key,
 				},
-				body: JSON.stringify(updates),
 			});
-			
+
 			if (!response.ok) {
 				const errorText = await response.text();
-				throw new Error(`HTTP ${response.status}: ${errorText}`);
+				return { data: null, error: { message: errorText } };
 			}
-			
-			// Pour PATCH, on peut ne pas avoir de contenu de réponse
-			const contentType = response.headers.get("content-type");
-			if (contentType && contentType.includes("application/json")) {
-				return await response.json();
-			} else {
-				return { success: true };
-			}
+
+			const data = await response.json();
+			return { data, error: null };
 		} catch (error) {
-			console.error("Erreur updateUtilisateur:", error);
-			return { error: error.message };
+			return { data: null, error };
+		}
+	}
+	// Créer un nouveau bucket
+	async createBucket(bucketName, options = {}) {
+		try {
+			const response = await fetch(`${this.url}/storage/v1/bucket`, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${this.key}`,
+					apikey: this.key,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: bucketName,
+					public: options.public || false,
+					allowed_mime_types: options.allowedMimeTypes || null,
+					file_size_limit: options.fileSizeLimit || null,
+				}),
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+}
+
+// Classe pour gérer un bucket spécifique
+class SupabaseBucket {
+	constructor(url, key, bucketName) {
+		this.url = url;
+		this.key = key;
+		this.bucketName = bucketName;
+		this.storageURL = `${url}/storage/v1/object`;
+	}
+
+	// Uploader un fichier
+	async upload(path, file, options = {}) {
+		try {
+			const formData = new FormData();
+			formData.append("", file);
+
+			const response = await fetch(
+				`${this.storageURL}/${this.bucketName}/${path}`,
+				{
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${this.key}`,
+						apikey: this.key,
+						...(options.cacheControl && {
+							"cache-control": options.cacheControl,
+						}),
+					},
+					body: formData,
+				}
+			);
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
 		}
 	}
 
-  async create(table, data) {
-    const url = `${this.baseURL}/${table}`;
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error(`Erreur ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.error("Erreur create:", err);
-      return null;
-    }
-  }
+	// Supprimer des fichiers
+	async remove(paths) {
+		try {
+			const response = await fetch(`${this.storageURL}/${this.bucketName}`, {
+				method: "DELETE",
+				headers: {
+					Authorization: `Bearer ${this.key}`,
+					apikey: this.key,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ prefixes: paths }),
+			});
 
-  async update(table, id, data) {
-    const url = `${this.baseURL}/${table}?id=eq.${id}`;
-    try {
-      const response = await fetch(url, {
-        method: "PATCH",
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error(`Erreur ${response.status}`);
-      return await response.json();
-    } catch (err) {
-      console.error("Erreur update:", err);
-      return null;
-    }
-  }
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
 
-  async delete(table, id) {
-    const url = `${this.baseURL}/${table}?id=eq.${id}`;
-    try {
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          apikey: this.key,
-          Authorization: `Bearer ${this.key}`,
-        },
-      });
-      if (!response.ok) throw new Error(`Erreur ${response.status}`);
-      return true;
-    } catch (err) {
-      console.error("Erreur delete:", err);
-      return false;
-    }
-  }
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+
+	// Lister les fichiers dans le bucket
+	async list(path = "", options = {}) {
+		try {
+			const params = new URLSearchParams();
+			if (options.limit) params.append("limit", options.limit);
+			if (options.offset) params.append("offset", options.offset);
+
+			const response = await fetch(
+				`${this.storageURL}/list/${this.bucketName}/${path}?${params}`,
+				{
+					headers: {
+						Authorization: `Bearer ${this.key}`,
+						apikey: this.key,
+					},
+				}
+			);
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				return { data: null, error: { message: errorText } };
+			}
+
+			const data = await response.json();
+			return { data, error: null };
+		} catch (error) {
+			return { data: null, error };
+		}
+	}
+
+	// Obtenir l'URL publique d'un fichier
+	getPublicUrl(path) {
+		return {
+			data: {
+				publicUrl: `${this.url}/storage/v1/object/public/${this.bucketName}/${path}`,
+			},
+		};
+	}
 }
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
