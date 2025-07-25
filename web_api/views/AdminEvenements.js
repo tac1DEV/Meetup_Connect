@@ -1,4 +1,5 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
+import supabase from "../config.js";
 
 export default function AdminEvenements() {
   return {
@@ -136,22 +137,27 @@ export default function AdminEvenements() {
 // Fonctions CRUD
 async function loadEvents() {
   try {
-    const response = await fetch('https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement?select=*&order=date.desc', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json'
-      }
+    const events = await supabase.query("evenement", {
+      select: "*",
+      orderBy: "date.desc"
     });
     
-    if (response.ok) {
-      const events = await response.json();
-      displayEvents(events);
-    } else {
-      throw new Error('Erreur lors du chargement des événements');
-    }
+    displayEvents(events);
   } catch (error) {
+    console.error('Erreur loadEvents:', error);
     showToast('Erreur lors du chargement des événements: ' + error.message, 'error');
+    
+    // Afficher un message d'erreur dans le tableau
+    const tbody = document.getElementById('events-tbody');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="padding: 2rem; text-align: center; color: #dc3545;">
+            Erreur de chargement : ${error.message}
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -239,23 +245,9 @@ function displayEvents(events) {
 
 async function changeEventStatus(eventId, status) {
   try {
-    const response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement?id=eq.${eventId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ statut: status })
-    });
-
-    if (response.ok) {
-      showToast('Statut mis à jour avec succès', 'success');
-      loadEvents();
-    } else {
-      throw new Error('Erreur lors du changement de statut');
-    }
+    await supabase.update("evenement", { statut: status }, { id: eventId });
+    showToast('Statut mis à jour avec succès', 'success');
+    loadEvents();
   } catch (error) {
     showToast('Erreur lors du changement de statut: ' + error.message, 'error');
   }
@@ -263,23 +255,9 @@ async function changeEventStatus(eventId, status) {
 
 async function changeEventVisibility(eventId, visibility) {
   try {
-    const response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement?id=eq.${eventId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ visibilite: visibility === 'true' })
-    });
-
-    if (response.ok) {
-      showToast('Visibilité mise à jour avec succès', 'success');
-      loadEvents();
-    } else {
-      throw new Error('Erreur lors du changement de visibilité');
-    }
+    await supabase.update("evenement", { visibilite: visibility === 'true' }, { id: eventId });
+    showToast('Visibilité mise à jour avec succès', 'success');
+    loadEvents();
   } catch (error) {
     showToast('Erreur lors du changement de visibilité: ' + error.message, 'error');
   }
@@ -291,21 +269,9 @@ async function deleteEvent(eventId) {
   }
 
   try {
-    const response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement?id=eq.${eventId}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.ok) {
-      showToast('Événement supprimé avec succès', 'success');
-      loadEvents();
-    } else {
-      throw new Error('Erreur lors de la suppression');
-    }
+    await supabase.delete("evenement", { id: eventId });
+    showToast('Événement supprimé avec succès', 'success');
+    loadEvents();
   } catch (error) {
     showToast('Erreur lors de la suppression: ' + error.message, 'error');
   }
@@ -562,41 +528,18 @@ async function handleEventSubmit(eventId = null, isEdit = false) {
   };
   
   try {
-    let response;
     if (isEdit) {
       // Modification
-      response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement?id=eq.${eventId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(formData)
-      });
+      await supabase.update("evenement", formData, { id: eventId });
+      showToast('Événement modifié avec succès', 'success');
     } else {
       // Ajout
-      response = await fetch('https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/evenement', {
-        method: 'POST',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(formData)
-      });
+      await supabase.insert("evenement", formData);
+      showToast('Événement ajouté avec succès', 'success');
     }
     
-    if (response.ok) {
-      showToast(`Événement ${isEdit ? 'modifié' : 'ajouté'} avec succès`, 'success');
-      closeEventModal();
-      loadEvents();
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Erreur lors de ${isEdit ? 'la modification' : 'l\'ajout'}`);
-    }
+    closeEventModal();
+    loadEvents();
   } catch (error) {
     showToast(`Erreur: ${error.message}`, 'error');
   }

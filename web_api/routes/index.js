@@ -19,7 +19,7 @@ import UseStateDemoPage from "../views/UseStateDemoPage.js";
 
 export default {
   "/": {
-    tag: TestPage,
+    tag: LandingPage,
   },
   "/home": {
     tag: LandingPage,

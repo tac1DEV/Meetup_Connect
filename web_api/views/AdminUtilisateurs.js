@@ -1,4 +1,5 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
+import supabase from "../config.js";
 
 export default function AdminUtilisateurs() {
   return {
@@ -136,22 +137,27 @@ export default function AdminUtilisateurs() {
 // Fonctions CRUD
 async function loadUsers() {
   try {
-    const response = await fetch('https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/utilisateur?select=*&order=created_at.desc', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json'
-      }
+    const users = await supabase.query("utilisateur", {
+      select: "*",
+      orderBy: "created_at.desc"
     });
     
-    if (response.ok) {
-      const users = await response.json();
-      displayUsers(users);
-    } else {
-      throw new Error('Erreur lors du chargement des utilisateurs');
-    }
+    displayUsers(users);
   } catch (error) {
+    console.error('Erreur loadUsers:', error);
     showToast('Erreur lors du chargement des utilisateurs: ' + error.message, 'error');
+    
+    // Afficher un message d'erreur dans le tableau
+    const tbody = document.getElementById('users-tbody');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="padding: 2rem; text-align: center; color: #dc3545;">
+            Erreur de chargement : ${error.message}
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -229,23 +235,9 @@ function displayUsers(users) {
 
 async function changeUserRole(userId, roleId) {
   try {
-    const response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/utilisateur?id=eq.${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ id_role: parseInt(roleId) })
-    });
-
-    if (response.ok) {
-      showToast('Rôle mis à jour avec succès', 'success');
-      loadUsers();
-    } else {
-      throw new Error('Erreur lors du changement de rôle');
-    }
+    await supabase.update("utilisateur", { id_role: parseInt(roleId) }, { id: userId });
+    showToast('Rôle mis à jour avec succès', 'success');
+    loadUsers();
   } catch (error) {
     showToast('Erreur lors du changement de rôle: ' + error.message, 'error');
   }
@@ -257,21 +249,9 @@ async function deleteUser(userId) {
   }
 
   try {
-    const response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/utilisateur?id=eq.${userId}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.ok) {
-      showToast('Utilisateur supprimé avec succès', 'success');
-      loadUsers();
-    } else {
-      throw new Error('Erreur lors de la suppression');
-    }
+    await supabase.delete("utilisateur", { id: userId });
+    showToast('Utilisateur supprimé avec succès', 'success');
+    loadUsers();
   } catch (error) {
     showToast('Erreur lors de la suppression: ' + error.message, 'error');
   }
@@ -455,29 +435,15 @@ async function handleUserSubmit(userId = null, isEdit = false) {
     let response;
     if (isEdit) {
       // Modification
-      response = await fetch(`https://wxfruxhckurswdcbdxwq.supabase.co/rest/v1/utilisateur?id=eq.${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4ZnJ1eGhja3Vyc3dkY2JkeHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyMzM0OTksImV4cCI6MjA2NTgwOTQ5OX0.OztdaAYi3kRHhXmPwhmQCH7emQAkyYk-2R5io6M-8es',
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(formData)
-      });
+      await supabase.update("utilisateur", formData, { id: userId });
+      showToast('Utilisateur modifié avec succès', 'success');
+      closeUserModal();
+      loadUsers();
     } else {
       // Ajout - Note: Pour un vrai ajout, il faudrait d'abord créer l'utilisateur dans auth.users
       showToast('Pour ajouter un utilisateur, il faut d\'abord créer un compte dans l\'authentification', 'info');
       closeUserModal();
       return;
-    }
-    
-    if (response.ok) {
-      showToast(`Utilisateur ${isEdit ? 'modifié' : 'ajouté'} avec succès`, 'success');
-      closeUserModal();
-      loadUsers();
-    } else {
-      throw new Error(`Erreur lors de ${isEdit ? 'la modification' : 'l\'ajout'}`);
     }
   } catch (error) {
     showToast(`Erreur: ${error.message}`, 'error');

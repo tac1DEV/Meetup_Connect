@@ -1,6 +1,33 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
-
+function parseJwt(token) {
+  if (!token) return null;
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
 export default function AdminPage() {
+  const token = localStorage.getItem("sb_token");
+  const user = parseJwt(token);
+  console.log(user);
+  
+  if (!user) {
+    window.location.href = "/web_api/login";
+    return { tag: "div", children: ["Redirection..."] };
+  }
+
+  
   return {
     tag: "div",
     attributes: [["style", {
