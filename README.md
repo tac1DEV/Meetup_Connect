@@ -31,3 +31,7 @@
    ```bash
    git clone https://github.com/tac1DEV/Meetup_Connect.git
    cd Meetup_Connect
+
+2. Ajouter l'extension VSCode "LiveServer", développée par Ritwick Dey
+
+3. Appuyer sur "Go live" en bas a droite de la fenetre
